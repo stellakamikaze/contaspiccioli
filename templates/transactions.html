@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Transazioni - Contaspiccioli{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold">Transazioni</h1>
+            <p class="text-muted-foreground">{{ month_name }} {{ year }}</p>
+        </div>
+        <button onclick="document.getElementById('add-modal').classList.remove('hidden')"
+                class="bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent/90 transition">
+            + Aggiungi
+        </button>
+    </div>
+
+    <!-- Month navigation -->
+    <div class="flex gap-2">
+        {% set prev_month = month - 1 if month > 1 else 12 %}
+        {% set prev_year = year if month > 1 else year - 1 %}
+        {% set next_month = month + 1 if month < 12 else 1 %}
+        {% set next_year = year if month < 12 else year + 1 %}
+
+        <a href="/transactions?year={{ prev_year }}&month={{ prev_month }}"
+           class="px-3 py-1 bg-muted rounded hover:bg-border transition"> Precedente</a>
+        <a href="/transactions?year={{ next_year }}&month={{ next_month }}"
+           class="px-3 py-1 bg-muted rounded hover:bg-border transition">Successivo </a>
+    </div>
+
+    <!-- Transactions list -->
+    <div class="card">
+        <table class="w-full">
+            <thead class="border-b border-border">
+                <tr class="text-left text-muted-foreground text-sm">
+                    <th class="p-4">Data</th>
+                    <th class="p-4">Descrizione</th>
+                    <th class="p-4">Categoria</th>
+                    <th class="p-4 text-right">Importo</th>
+                    <th class="p-4"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr class="border-b border-border hover:bg-muted/50 transition">
+                    <td class="p-4">{{ t.date|date }}</td>
+                    <td class="p-4">{{ t.description or '-' }}</td>
+                    <td class="p-4">
+                        {% if t.category %}
+                        <span class="px-2 py-1 bg-muted rounded text-sm">
+                            {{ t.category.icon }} {{ t.category.name }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted-foreground">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-4 text-right font-mono {% if t.is_income %}text-accent{% else %}text-accent-red{% endif %}">
+                        {% if t.is_income %}+{% else %}-{% endif %}{{ t.amount|currency }}
+                    </td>
+                    <td class="p-4 text-right">
+                        <button hx-delete="/api/transactions/{{ t.id }}"
+                                hx-confirm="Eliminare questa transazione?"
+                                hx-swap="none"
+                                hx-on::after-request="location.reload()"
+                                class="text-muted-foreground hover:text-accent-red transition">
+
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="p-8 text-center text-muted-foreground">
+                        Nessuna transazione per questo mese
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Transaction Modal -->
+<div id="add-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="card p-6 w-full max-w-md mx-4">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">Nuova Transazione</h2>
+            <button onclick="document.getElementById('add-modal').classList.add('hidden')"
+                    class="text-muted-foreground hover:text-foreground">&times;</button>
+        </div>
+
+        <form action="/transactions/add" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-sm mb-1">Data</label>
+                <input type="date" name="date_str" required
+                       value="{{ '%Y-%m-%d'|format(now()) if now is defined else '' }}"
+                       class="w-full bg-muted border border-border rounded px-3 py-2">
+            </div>
+
+            <div>
+                <label class="block text-sm mb-1">Importo</label>
+                <input type="number" name="amount" step="0.01" required
+                       class="w-full bg-muted border border-border rounded px-3 py-2"
+                       placeholder="0.00">
+            </div>
+
+            <div>
+                <label class="block text-sm mb-1">Descrizione</label>
+                <input type="text" name="description"
+                       class="w-full bg-muted border border-border rounded px-3 py-2"
+                       placeholder="Opzionale">
+            </div>
+
+            <div>
+                <label class="block text-sm mb-1">Categoria</label>
+                <select name="category_id" required
+                        class="w-full bg-muted border border-border rounded px-3 py-2">
+                    <option value="0">-- Seleziona --</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.icon }} {{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <input type="checkbox" name="is_income" id="is_income" value="true"
+                       class="rounded bg-muted border-border">
+                <label for="is_income" class="text-sm">Entrata (non spesa)</label>
+            </div>
+
+            <div class="flex gap-2 justify-end pt-4">
+                <button type="button"
+                        onclick="document.getElementById('add-modal').classList.add('hidden')"
+                        class="px-4 py-2 bg-muted rounded hover:bg-border transition">
+                    Annulla
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-accent text-white rounded hover:bg-accent/90 transition">
+                    Salva
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Set today's date as default
+    document.querySelector('input[name="date_str"]').valueAsDate = new Date();
+</script>
+{% endblock %}

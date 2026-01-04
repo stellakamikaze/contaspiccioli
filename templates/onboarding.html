@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Setup - Contaspiccioli{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+        <h1 class="text-3xl font-bold mb-2">Benvenuto in Contaspiccioli</h1>
+        <p class="text-muted-foreground">Configura il tuo budget basato sui 4 Pilastri</p>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="flex justify-between items-center px-4">
+        {% for i in range(1, 6) %}
+        <div class="flex flex-col items-center">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold
+                        {% if i < step %}bg-accent text-white
+                        {% elif i == step %}bg-accent text-white ring-4 ring-accent/30
+                        {% else %}bg-muted text-muted-foreground{% endif %}">
+                {% if i < step %}✓{% else %}{{ i }}{% endif %}
+            </div>
+            <span class="text-xs mt-1 text-muted-foreground">
+                {% if i == 1 %}Introiti
+                {% elif i == 2 %}Fisse
+                {% elif i == 3 %}Variabili
+                {% elif i == 4 %}Pilastri
+                {% elif i == 5 %}Saldi
+                {% endif %}
+            </span>
+        </div>
+        {% if i < 5 %}
+        <div class="flex-1 h-1 mx-2 {% if i < step %}bg-accent{% else %}bg-muted{% endif %}"></div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Form Card -->
+    <form action="/setup" method="POST" class="card p-8">
+        <input type="hidden" name="step" value="{{ step }}">
+
+        {% if step == 1 %}
+        <!-- Step 1: Introiti -->
+        <div class="space-y-6">
+            <div class="text-center mb-6">
+                <span class="text-4xl">💰</span>
+                <h2 class="text-xl font-semibold mt-2">I tuoi introiti</h2>
+                <p class="text-muted-foreground text-sm">Stima quanto guadagni in media. Potrai aggiungere introiti extra mese per mese.</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">Introito mensile medio stimato</label>
+                <div class="relative">
+                    <input type="number" name="monthly_income" step="100" required
+                           value="{{ profile.monthly_income or 4500 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 text-xl font-mono"
+                           placeholder="4500">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€/mese</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">Lordo se P.IVA, netto se stipendio. Potrai aggiustare ogni mese.</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">Che tipo di reddito hai?</label>
+                <div class="grid grid-cols-1 gap-2">
+                    <label class="flex items-center p-3 bg-muted rounded-lg cursor-pointer hover:bg-border transition">
+                        <input type="radio" name="income_type" value="piva_forfettario"
+                               {% if profile.income_type == 'piva_forfettario' or not profile.income_type %}checked{% endif %}
+                               class="mr-3">
+                        <div>
+                            <span class="font-medium">Partita IVA Forfettaria</span>
+                            <p class="text-xs text-muted-foreground">Tasse ~26-31% (INPS + IRPEF 5%)</p>
+                        </div>
+                    </label>
+                    <label class="flex items-center p-3 bg-muted rounded-lg cursor-pointer hover:bg-border transition">
+                        <input type="radio" name="income_type" value="piva_ordinario"
+                               {% if profile.income_type == 'piva_ordinario' %}checked{% endif %}
+                               class="mr-3">
+                        <div>
+                            <span class="font-medium">Partita IVA Ordinaria</span>
+                            <p class="text-xs text-muted-foreground">Tasse variabili, inserisci la tua %</p>
+                        </div>
+                    </label>
+                    <label class="flex items-center p-3 bg-muted rounded-lg cursor-pointer hover:bg-border transition">
+                        <input type="radio" name="income_type" value="stipendio"
+                               {% if profile.income_type == 'stipendio' %}checked{% endif %}
+                               class="mr-3">
+                        <div>
+                            <span class="font-medium">Stipendio</span>
+                            <p class="text-xs text-muted-foreground">Netto in busta, tasse già trattenute</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <p class="text-sm text-blue-400">
+                    <strong>Nota:</strong> Ogni mese potrai aggiungere introiti extra (lavori occasionali, bonus, ecc.)
+                    e l'app ricalcolerà automaticamente tasse e allocazioni.
+                </p>
+            </div>
+        </div>
+
+        {% elif step == 2 %}
+        <!-- Step 2: Spese Fisse -->
+        <div class="space-y-6">
+            <div class="text-center mb-6">
+                <span class="text-4xl">🏠</span>
+                <h2 class="text-xl font-semibold mt-2">Spese fisse mensili</h2>
+                <p class="text-muted-foreground text-sm">Costi ricorrenti che non cambiano</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">🏠 Affitto o mutuo</label>
+                <div class="relative">
+                    <input type="number" name="rent" step="10"
+                           value="{{ profile.rent or 700 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">Canone affitto, rata mutuo, spese condominiali</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">📱 Abbonamenti</label>
+                <div class="relative">
+                    <input type="number" name="subscriptions" step="5"
+                           value="{{ profile.subscriptions or 100 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">Netflix, Spotify, palestra, telefono, internet, assicurazioni</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">📋 Altre spese fisse</label>
+                <div class="relative">
+                    <input type="number" name="other_fixed" step="5"
+                           value="{{ profile.other_fixed or 135 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">Commercialista, rata auto, bollette medie</p>
+            </div>
+
+            <div class="p-4 bg-muted rounded-lg">
+                <div class="flex justify-between">
+                    <span class="text-muted-foreground">Totale spese fisse:</span>
+                    <span class="font-bold text-lg" id="total-fixed">{{ (profile.rent or 700) + (profile.subscriptions or 100) + (profile.other_fixed or 135) }} €/mese</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-2">Queste spese vengono sottratte per prime dal tuo introito</p>
+            </div>
+        </div>
+
+        {% elif step == 3 %}
+        <!-- Step 3: Spese Variabili -->
+        <div class="space-y-6">
+            <div class="text-center mb-6">
+                <span class="text-4xl">🛒</span>
+                <h2 class="text-xl font-semibold mt-2">Budget spese variabili</h2>
+                <p class="text-muted-foreground text-sm">Quanto vuoi allocare per ogni categoria</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">🛒 Spesa alimentare</label>
+                <div class="relative">
+                    <input type="number" name="food_budget" step="10"
+                           value="{{ profile.food_budget or 350 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">Supermercato, frutta e verdura, prodotti casa</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">🍽️ Ristoranti e uscite</label>
+                <div class="relative">
+                    <input type="number" name="restaurants_budget" step="10"
+                           value="{{ profile.restaurants_budget or 400 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">Pranzi fuori, cene, aperitivi, delivery, bar</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">🚗 Trasporti</label>
+                <div class="relative">
+                    <input type="number" name="transport_budget" step="10"
+                           value="{{ profile.transport_budget or 210 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">Benzina, mezzi pubblici, taxi, parcheggi, car sharing</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">🛍️ Shopping e acquisti</label>
+                <div class="relative">
+                    <input type="number" name="shopping_budget" step="10"
+                           value="{{ profile.shopping_budget or 400 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">Vestiti, tecnologia, regali, hobby, salute, cultura</p>
+            </div>
+
+            <div class="p-4 bg-muted rounded-lg space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-muted-foreground">Totale budget variabile:</span>
+                    <span class="font-bold text-lg">{{ (profile.food_budget or 350) + (profile.restaurants_budget or 400) + (profile.transport_budget or 210) + (profile.shopping_budget or 400) }} €/mese</span>
+                </div>
+                <p class="text-xs text-muted-foreground">Questi budget sono flessibili e si adattano ai tuoi introiti effettivi</p>
+            </div>
+        </div>
+
+        {% elif step == 4 %}
+        <!-- Step 4: I 4 Pilastri -->
+        <div class="space-y-6">
+            <div class="text-center mb-4">
+                <span class="text-4xl">🏛️</span>
+                <h2 class="text-xl font-semibold mt-2">I 4 Pilastri</h2>
+                <p class="text-muted-foreground text-sm">Metodo del Prof. Paolo Coletti per gestire il patrimonio</p>
+            </div>
+
+            <!-- Spiegazione Pilastri -->
+            <div class="p-4 bg-accent/10 border border-accent/30 rounded-lg space-y-2">
+                <p class="text-sm"><strong>1° Pilastro - Liquidità:</strong> Soldi per le spese quotidiane sul conto corrente</p>
+                <p class="text-sm"><strong>2° Pilastro - Emergenza:</strong> Fondo per imprevisti (3-6 mesi di spese) su conto deposito</p>
+                <p class="text-sm"><strong>3° Pilastro - Tasse/Obbligazioni:</strong> Accantonamento tasse e spese prevedibili</p>
+                <p class="text-sm"><strong>4° Pilastro - Investimenti:</strong> Capitale per il lungo periodo (10+ anni) in ETF azionari</p>
+                <p class="text-xs text-accent mt-2">Consiglio Coletti: risparmia almeno il 30% di quello che guadagni</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">🛡️ 2° Pilastro - Fondo Emergenza Target</label>
+                <div class="relative">
+                    <input type="number" name="emergency_target" step="1000"
+                           value="{{ profile.emergency_target or 10000 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">Consigliato: 3-6 mesi di spese (~10.000€). Raggiunto il target, si smette di versare.</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">📋 3° Pilastro - % Accantonamento Tasse</label>
+                <div class="relative">
+                    <input type="number" name="tax_percentage" step="1" min="0" max="50"
+                           value="{{ ((profile.tax_percentage or 0.31) * 100)|round|int }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+                </div>
+                <div class="mt-2 p-3 bg-muted rounded text-xs space-y-1">
+                    <p><strong>P.IVA forfettaria:</strong> ~26% (INPS) + ~4% (IRPEF 5%) = <strong>~30-31%</strong></p>
+                    <p><strong>P.IVA ordinaria:</strong> variabile, tipicamente 35-45%</p>
+                    <p><strong>Stipendio:</strong> 0% (già trattenute in busta)</p>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">📈 4° Pilastro - % Investimenti</label>
+                <div class="relative">
+                    <input type="number" name="investment_percentage" step="1" min="0" max="50"
+                           value="{{ ((profile.investment_percentage or 0.15) * 100)|round|int }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+                </div>
+                <div class="mt-2 p-3 bg-muted rounded text-xs space-y-1">
+                    <p><strong>Minimo consigliato:</strong> 10% del reddito</p>
+                    <p><strong>Ideale Coletti:</strong> 20-30% (incluso risparmio)</p>
+                    <p><strong>Aggressivo:</strong> tutto l'avanzo dopo spese e tasse</p>
+                </div>
+            </div>
+        </div>
+
+        {% elif step == 5 %}
+        <!-- Step 5: Situazione Attuale -->
+        <div class="space-y-6">
+            <div class="text-center mb-6">
+                <span class="text-4xl">💳</span>
+                <h2 class="text-xl font-semibold mt-2">Situazione attuale</h2>
+                <p class="text-muted-foreground text-sm">I saldi attuali dei tuoi pilastri</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">🏦 1° Pilastro - Saldo Conto Corrente</label>
+                <div class="relative">
+                    <input type="number" name="current_balance" step="100"
+                           value="{{ profile.current_balance or 0 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">Il conto da cui paghi le spese quotidiane</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">🛡️ 2° Pilastro - Saldo Fondo Emergenza</label>
+                <div class="relative">
+                    <input type="number" name="emergency_balance" step="100"
+                           value="{{ profile.emergency_balance or 0 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">Conto deposito o XEON per emergenze</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">📋 3° Pilastro - Saldo Conto Tasse</label>
+                <div class="relative">
+                    <input type="number" name="tax_balance" step="100"
+                           value="{{ profile.tax_balance or 0 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">Quanto hai già messo da parte per le tasse</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">📈 4° Pilastro - Valore Investimenti</label>
+                <div class="relative">
+                    <input type="number" name="investment_balance" step="100"
+                           value="{{ profile.investment_balance or 0 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-muted-foreground mt-1">ETF, azioni, fondi a lungo termine</p>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2">Tasse già pagate quest'anno</label>
+                <div class="relative">
+                    <input type="number" name="taxes_paid_ytd" step="100"
+                           value="{{ profile.taxes_paid_ytd or 0 }}"
+                           class="w-full bg-muted border border-border rounded px-4 py-3 font-mono">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Navigation Buttons -->
+        <div class="flex justify-between mt-8 pt-6 border-t border-border">
+            {% if step > 1 %}
+            <a href="/setup?step={{ step - 1 }}"
+               class="px-6 py-3 bg-muted rounded-lg hover:bg-border transition">
+                ← Indietro
+            </a>
+            {% else %}
+            <div></div>
+            {% endif %}
+
+            <button type="submit"
+                    class="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition font-medium">
+                {% if step < 5 %}
+                Continua →
+                {% else %}
+                Vedi Prospetto Annuale →
+                {% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+/* Contaspiccioli custom styles */
+
+/* Currency formatting */
+.currency::before {
+    content: '';
+}
+
+.currency::after {
+    content: '';
+}
+
+/* Table hover effects */
+table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+    backdrop-filter: blur(4px);
+}
+
+/* Form inputs focus */
+input:focus, select:focus {
+    outline: none;
+    border-color: #10B981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+/* Button transitions */
+button {
+    transition: all 0.2s ease;
+}
+
+/* Card hover */
+.card:hover {
+    border-color: #404040;
+}
+
+/* Progress bar animation */
+.progress-fill {
+    animation: progressFill 0.5s ease-out;
+}
+
+@keyframes progressFill {
+    from {
+        width: 0;
+    }
+}
