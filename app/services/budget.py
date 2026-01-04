@@ -1,6 +1,6 @@
 """Budget calculation service."""
-from datetime import date, datetime
-from typing import Dict, List, Optional
+from datetime import date
+from typing import Any, Dict, List
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
 

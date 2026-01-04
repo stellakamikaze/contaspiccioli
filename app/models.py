@@ -1,6 +1,5 @@
 """SQLAlchemy models for Contaspiccioli."""
 from datetime import datetime, date
-from decimal import Decimal
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Date, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
