@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Come Funziona - Contaspiccioli{% endblock %}
+
+{% block content %}
+<div class="space-y-8 sm:space-y-12">
+    <!-- Hero -->
+    <div class="text-center max-w-3xl mx-auto">
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-display font-bold mb-4 sm:mb-6">
+            Gestisci il tuo <span class="text-accent">flusso di cassa</span> da freelance
+        </h1>
+        <p class="text-lg sm:text-xl text-muted-foreground mb-6 sm:mb-8">
+            Basato sul metodo dei <strong>4 Pilastri</strong> del Prof. Paolo Coletti.
+            Progettato per liberi professionisti con Partita IVA forfettaria.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+            <a href="/setup?step=1" class="btn-primary px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-medium">
+                Inizia la Configurazione
+            </a>
+            <a href="/" class="btn-secondary px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg">
+                Vai alla Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Il Metodo dei 4 Pilastri -->
+    <div class="card p-4 sm:p-6 md:p-8">
+        <h2 class="text-xl sm:text-2xl font-display font-semibold mb-4 sm:mb-6 text-center">Il Metodo dei 4 Pilastri</h2>
+        <p class="text-muted-foreground text-center mb-6 sm:mb-8 max-w-2xl mx-auto">
+            Ogni euro che guadagni viene allocato su 4 "contenitori" separati, ognuno con uno scopo preciso.
+            Questo ti permette di non confondere mai i soldi per le tasse con quelli per la spesa.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div class="p-4 sm:p-6 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                <div class="text-3xl sm:text-4xl mb-3">1</div>
+                <h3 class="font-semibold text-blue-400 mb-2">Conto Corrente</h3>
+                <p class="text-sm text-muted-foreground">
+                    Le spese quotidiane: affitto, bollette, spesa alimentare, abbonamenti.
+                    Qui transita tutto il denaro in entrata e uscita.
+                </p>
+            </div>
+
+            <div class="p-4 sm:p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                <div class="text-3xl sm:text-4xl mb-3">2</div>
+                <h3 class="font-semibold text-emerald-400 mb-2">Fondo Emergenza</h3>
+                <p class="text-sm text-muted-foreground">
+                    6 mesi di spese accantonati per imprevisti: cliente che non paga, spese mediche,
+                    riparazioni urgenti. Una volta raggiunto, non si tocca.
+                </p>
+            </div>
+
+            <div class="p-4 sm:p-6 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                <div class="text-3xl sm:text-4xl mb-3">3</div>
+                <h3 class="font-semibold text-amber-400 mb-2">Conto Tasse</h3>
+                <p class="text-sm text-muted-foreground">
+                    Accantonamento automatico per INPS, IRPEF, saldo e acconti.
+                    Ogni mese metti da parte ~31% del lordo. Non spenderli mai per altro.
+                </p>
+            </div>
+
+            <div class="p-4 sm:p-6 bg-accent/10 border border-accent/20 rounded-xl">
+                <div class="text-3xl sm:text-4xl mb-3">4</div>
+                <h3 class="font-semibold text-accent mb-2">Investimenti</h3>
+                <p class="text-sm text-muted-foreground">
+                    Il tuo futuro: PAC su ETF azionari globali (VWCE, SWDA).
+                    Idealmente 10-20% del reddito. Non toccare per almeno 10 anni.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Per chi e P.IVA Forfettaria -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card p-4 sm:p-6">
+            <h2 class="text-lg sm:text-xl font-semibold mb-4">Per chi e progettato?</h2>
+            <ul class="space-y-3 text-sm sm:text-base">
+                <li class="flex items-start gap-3">
+                    <span class="text-accent mt-0.5">1</span>
+                    <span><strong>Liberi professionisti</strong> con P.IVA forfettaria</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="text-accent mt-0.5">2</span>
+                    <span><strong>Freelancer</strong> che vogliono gestire al meglio le tasse</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="text-accent mt-0.5">3</span>
+                    <span><strong>Consulenti</strong> con reddito variabile mese per mese</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="text-accent mt-0.5">4</span>
+                    <span><strong>Creativi e dev</strong> che vogliono smettere di temere il 730</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card p-4 sm:p-6">
+            <h2 class="text-lg sm:text-xl font-semibold mb-4">P.IVA Forfettaria: cosa calcola</h2>
+            <div class="space-y-3 text-sm sm:text-base">
+                <div class="flex justify-between items-center p-2 sm:p-3 bg-muted rounded-lg">
+                    <span class="text-muted-foreground">Coefficiente di redditivita</span>
+                    <span class="font-mono font-medium">78%</span>
+                </div>
+                <div class="flex justify-between items-center p-2 sm:p-3 bg-muted rounded-lg">
+                    <span class="text-muted-foreground">INPS Gestione Separata</span>
+                    <span class="font-mono font-medium text-amber-400">26,07%</span>
+                </div>
+                <div class="flex justify-between items-center p-2 sm:p-3 bg-muted rounded-lg">
+                    <span class="text-muted-foreground">Imposta sostitutiva</span>
+                    <span class="font-mono font-medium text-amber-400">5% o 15%</span>
+                </div>
+                <div class="flex justify-between items-center p-2 sm:p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                    <span class="text-muted-foreground">Totale da accantonare</span>
+                    <span class="font-mono font-bold text-accent">~31%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scadenze Fiscali -->
+    <div class="card p-4 sm:p-6">
+        <h2 class="text-lg sm:text-xl font-semibold mb-4">Scadenze Fiscali 2025-2026</h2>
+        <p class="text-muted-foreground text-sm mb-4">
+            Contaspiccioli ti ricorda le scadenze e calcola quanto devi avere accantonato.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div class="p-3 sm:p-4 bg-muted rounded-lg">
+                <p class="text-xs text-muted-foreground">Saldo + 1 Acconto</p>
+                <p class="font-mono font-medium">30 Giugno</p>
+                <p class="text-xs text-amber-400 mt-1">IRPEF + INPS</p>
+            </div>
+            <div class="p-3 sm:p-4 bg-muted rounded-lg">
+                <p class="text-xs text-muted-foreground">2 Acconto</p>
+                <p class="font-mono font-medium">30 Novembre</p>
+                <p class="text-xs text-amber-400 mt-1">IRPEF + INPS</p>
+            </div>
+            <div class="p-3 sm:p-4 bg-muted rounded-lg">
+                <p class="text-xs text-muted-foreground">Contributi fissi INPS</p>
+                <p class="font-mono font-medium text-xs">16 Mag, 20 Ago, 17 Nov, 16 Feb</p>
+                <p class="text-xs text-muted-foreground mt-1">Solo artigiani/commercianti</p>
+            </div>
+            <div class="p-3 sm:p-4 bg-muted rounded-lg">
+                <p class="text-xs text-muted-foreground">Dichiarazione redditi</p>
+                <p class="font-mono font-medium">30 Settembre</p>
+                <p class="text-xs text-muted-foreground mt-1">Modello Redditi PF</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Come Funziona -->
+    <div class="card p-4 sm:p-6 md:p-8">
+        <h2 class="text-xl sm:text-2xl font-display font-semibold mb-6 text-center">Come usare Contaspiccioli</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            <div class="text-center">
+                <div class="w-12 h-12 sm:w-16 sm:h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="text-xl sm:text-2xl font-bold text-accent">1</span>
+                </div>
+                <h3 class="font-semibold mb-2">Configura</h3>
+                <p class="text-sm text-muted-foreground">
+                    Rispondi a 5 semplici domande: quanto guadagni, le tue spese fisse,
+                    i tuoi obiettivi. Contaspiccioli calcola tutto il resto.
+                </p>
+            </div>
+            <div class="text-center">
+                <div class="w-12 h-12 sm:w-16 sm:h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="text-xl sm:text-2xl font-bold text-accent">2</span>
+                </div>
+                <h3 class="font-semibold mb-2">Monitora</h3>
+                <p class="text-sm text-muted-foreground">
+                    Ogni mese registri gli introiti e segni se hai fatto i versamenti.
+                    La dashboard ti mostra sempre dove sei rispetto al piano.
+                </p>
+            </div>
+            <div class="text-center">
+                <div class="w-12 h-12 sm:w-16 sm:h-16 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="text-xl sm:text-2xl font-bold text-accent">3</span>
+                </div>
+                <h3 class="font-semibold mb-2">Dormi Tranquillo</h3>
+                <p class="text-sm text-muted-foreground">
+                    Quando arriva la scadenza fiscale, i soldi sono gia pronti sul conto tasse.
+                    Niente sorprese, niente ansia, niente rate.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Open Source -->
+    <div class="card p-4 sm:p-6 bg-gradient-to-br from-accent/5 to-transparent border-accent/20">
+        <div class="flex flex-col md:flex-row items-center gap-4 sm:gap-6">
+            <div class="flex-shrink-0">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 bg-accent/20 rounded-2xl flex items-center justify-center">
+                    <svg class="w-8 h-8 sm:w-10 sm:h-10 text-accent" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="text-center md:text-left">
+                <h2 class="text-lg sm:text-xl font-semibold mb-2">Open Source & AI-Powered</h2>
+                <p class="text-sm sm:text-base text-muted-foreground mb-3">
+                    Contaspiccioli e un progetto <strong>FOSS</strong> (Free and Open Source Software),
+                    nato come evoluzione di un Google Sheet e sviluppato con il supporto di <strong>Claude AI</strong>.
+                    Il codice e disponibile su GitHub.
+                </p>
+                <a href="https://github.com/stellakamikaze/contaspiccioli" target="_blank" rel="noopener"
+                   class="inline-flex items-center gap-2 text-accent hover:text-accent/80 transition-colors text-sm sm:text-base">
+                    <span>Vedi su GitHub</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Finale -->
+    <div class="text-center py-6 sm:py-8">
+        <h2 class="text-xl sm:text-2xl font-display font-semibold mb-4">Pronto a gestire meglio i tuoi soldi?</h2>
+        <a href="/setup?step=1" class="btn-primary px-8 sm:px-10 py-3 sm:py-4 text-base sm:text-lg font-medium inline-block">
+            Inizia Ora - E Gratuito
+        </a>
+    </div>
+</div>
+{% endblock %}

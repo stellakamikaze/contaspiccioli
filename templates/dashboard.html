@@ -144,43 +144,47 @@
         <!-- Checkbox versamenti -->
         <div class="mt-6 pt-6 border-t border-border">
             <h3 class="text-sm font-medium mb-4">Hai già effettuato questi versamenti per {{ month_name }}?</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <form action="/update-monthly-payment" method="POST" class="flex items-center justify-between p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <form action="/update-monthly-payment" method="POST">
                     <input type="hidden" name="payment_type" value="tax">
                     <input type="hidden" name="year" value="{{ year }}">
                     <input type="hidden" name="month" value="{{ month }}">
-                    <div class="flex items-center gap-3">
-                        <input type="checkbox" name="paid" id="tax_paid"
-                               {% if profile.tax_paid_this_month %}checked{% endif %}
-                               onchange="this.form.submit()"
-                               class="w-5 h-5 rounded bg-muted border-amber-500/30 accent-amber-500">
-                        <label for="tax_paid" class="cursor-pointer">
-                            <p class="text-sm font-medium text-amber-400">Versato {{ allocations.tax|currency }} € per tasse</p>
-                            <p class="text-xs text-muted-foreground">Sul conto deposito XEON Tasse</p>
-                        </label>
-                    </div>
-                    {% if profile.tax_paid_this_month %}
-                    <span class="text-xs text-amber-400 bg-amber-500/20 px-2 py-1 rounded">✓ Fatto</span>
-                    {% endif %}
+                    <label for="tax_paid" class="flex items-center justify-between p-3 sm:p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg cursor-pointer hover:bg-amber-500/15 transition-colors">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <input type="checkbox" name="paid" id="tax_paid"
+                                   {% if profile.tax_paid_this_month %}checked{% endif %}
+                                   onchange="this.form.submit()"
+                                   class="w-6 h-6 flex-shrink-0 rounded bg-muted border-amber-500/30 accent-amber-500">
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-amber-400 truncate">Versato {{ allocations.tax|currency }} € per tasse</p>
+                                <p class="text-xs text-muted-foreground">Sul conto deposito XEON Tasse</p>
+                            </div>
+                        </div>
+                        {% if profile.tax_paid_this_month %}
+                        <span class="text-xs text-amber-400 bg-amber-500/20 px-2 py-1 rounded flex-shrink-0 ml-2">Fatto</span>
+                        {% endif %}
+                    </label>
                 </form>
 
-                <form action="/update-monthly-payment" method="POST" class="flex items-center justify-between p-4 bg-accent/10 border border-accent/20 rounded-lg">
+                <form action="/update-monthly-payment" method="POST">
                     <input type="hidden" name="payment_type" value="investment">
                     <input type="hidden" name="year" value="{{ year }}">
                     <input type="hidden" name="month" value="{{ month }}">
-                    <div class="flex items-center gap-3">
-                        <input type="checkbox" name="paid" id="invest_paid"
-                               {% if profile.investment_paid_this_month %}checked{% endif %}
-                               onchange="this.form.submit()"
-                               class="w-5 h-5 rounded bg-muted border-accent/30 accent-accent">
-                        <label for="invest_paid" class="cursor-pointer">
-                            <p class="text-sm font-medium text-accent">Investito {{ allocations.investment|currency }} € in ETF</p>
-                            <p class="text-xs text-muted-foreground">PAC su VWCE, SWDA o simili</p>
-                        </label>
-                    </div>
-                    {% if profile.investment_paid_this_month %}
-                    <span class="text-xs text-accent bg-accent/20 px-2 py-1 rounded">✓ Fatto</span>
-                    {% endif %}
+                    <label for="invest_paid" class="flex items-center justify-between p-3 sm:p-4 bg-accent/10 border border-accent/20 rounded-lg cursor-pointer hover:bg-accent/15 transition-colors">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <input type="checkbox" name="paid" id="invest_paid"
+                                   {% if profile.investment_paid_this_month %}checked{% endif %}
+                                   onchange="this.form.submit()"
+                                   class="w-6 h-6 flex-shrink-0 rounded bg-muted border-accent/30 accent-accent">
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-accent truncate">Investito {{ allocations.investment|currency }} € in ETF</p>
+                                <p class="text-xs text-muted-foreground">PAC su VWCE, SWDA o simili</p>
+                            </div>
+                        </div>
+                        {% if profile.investment_paid_this_month %}
+                        <span class="text-xs text-accent bg-accent/20 px-2 py-1 rounded flex-shrink-0 ml-2">Fatto</span>
+                        {% endif %}
+                    </label>
                 </form>
             </div>
         </div>
@@ -265,43 +269,43 @@
 </div>
 
 <!-- Add Income Modal -->
-<div id="income-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-    <div class="card p-6 w-full max-w-md mx-4">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-display font-semibold">Aggiungi Entrata</h2>
+<div id="income-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="card p-4 sm:p-6 w-full max-w-md">
+        <div class="flex justify-between items-center mb-4 sm:mb-6">
+            <h2 class="text-lg sm:text-xl font-display font-semibold">Aggiungi Entrata</h2>
             <button onclick="document.getElementById('income-modal').classList.add('hidden')"
-                    class="text-muted-foreground hover:text-foreground text-2xl transition-colors">&times;</button>
+                    class="p-2 -mr-2 text-muted-foreground hover:text-foreground text-2xl transition-colors" aria-label="Chiudi">&times;</button>
         </div>
 
         <form action="/income/add" method="POST" class="space-y-4">
             <div>
                 <label class="block text-sm font-medium mb-2">Fonte</label>
                 <input type="text" name="source" required
-                       class="input w-full px-4 py-3"
+                       class="input w-full px-3 sm:px-4 py-3"
                        placeholder="Es: Ufficio Furore, Cliente X">
             </div>
 
             <div>
                 <label class="block text-sm font-medium mb-2">Importo</label>
                 <input type="number" name="amount" step="0.01" required
-                       class="input w-full px-4 py-3"
+                       class="input w-full px-3 sm:px-4 py-3"
                        placeholder="3500">
             </div>
 
-            <div class="flex items-center gap-3">
+            <label for="is_received" class="flex items-center gap-3 p-3 -mx-3 rounded-lg hover:bg-white/5 cursor-pointer transition-colors">
                 <input type="checkbox" name="is_received" id="is_received" value="true"
-                       class="w-5 h-5 rounded bg-muted border-border accent-accent">
-                <label for="is_received" class="text-sm">Già ricevuto</label>
-            </div>
+                       class="w-6 h-6 rounded bg-muted border-border accent-accent">
+                <span class="text-sm">Già ricevuto</span>
+            </label>
 
             <div class="flex gap-3 justify-end pt-4">
                 <button type="button"
                         onclick="document.getElementById('income-modal').classList.add('hidden')"
-                        class="btn-secondary px-5 py-2.5">
+                        class="btn-secondary px-4 sm:px-5 py-2.5 sm:py-3">
                     Annulla
                 </button>
                 <button type="submit"
-                        class="btn-primary px-5 py-2.5">
+                        class="btn-primary px-4 sm:px-5 py-2.5 sm:py-3">
                     Aggiungi
                 </button>
             </div>

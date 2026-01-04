@@ -183,49 +183,49 @@
         {% endif %}
 
         <!-- Calendario -->
-        <div class="overflow-x-auto">
+        <p class="text-xs text-muted-foreground mb-2 sm:hidden">← Scorri per vedere tutti i mesi →</p>
+        <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
             <div class="flex gap-2 min-w-max pb-4">
                 {% for month in calendar %}
-                <div class="w-32 flex-shrink-0">
+                <div class="w-24 sm:w-28 md:w-32 flex-shrink-0">
                     <!-- Header Mese -->
-                    <div class="p-2 bg-muted rounded-t-lg text-center border-b border-border">
-                        <p class="font-medium text-sm">{{ month.name }}</p>
+                    <div class="p-1.5 sm:p-2 bg-muted rounded-t-lg text-center border-b border-border">
+                        <p class="font-medium text-xs sm:text-sm">{{ month.name[:3] }}<span class="hidden sm:inline">{{ month.name[3:] }}</span></p>
                     </div>
 
                     <!-- Contenuto -->
-                    <div class="p-3 bg-card border border-border border-t-0 rounded-b-lg space-y-2">
+                    <div class="p-2 sm:p-3 bg-card border border-border border-t-0 rounded-b-lg space-y-1.5 sm:space-y-2">
                         <!-- Introito -->
                         <div>
-                            <p class="text-xs text-muted-foreground">Introito</p>
-                            <p class="font-mono text-sm {% if month.has_extra %}text-accent{% endif %}">
-                                {{ month.income|currency }} €
-                                {% if month.has_extra %}<span class="text-xs">+</span>{% endif %}
+                            <p class="text-[10px] sm:text-xs text-muted-foreground">Introito</p>
+                            <p class="font-mono text-xs sm:text-sm {% if month.has_extra %}text-accent{% endif %}">
+                                {{ month.income|currency }}
                             </p>
                         </div>
 
                         <!-- Tasse da accantonare -->
                         <div>
-                            <p class="text-xs text-amber-400">→ Tasse</p>
-                            <p class="font-mono text-sm text-amber-400">{{ month.tax_allocation|currency }} €</p>
+                            <p class="text-[10px] sm:text-xs text-amber-400">→ Tasse</p>
+                            <p class="font-mono text-xs sm:text-sm text-amber-400">{{ month.tax_allocation|currency }}</p>
                         </div>
 
                         <!-- Investimenti -->
                         <div>
-                            <p class="text-xs text-accent">→ Investimenti</p>
-                            <p class="font-mono text-sm text-accent">{{ month.investment_allocation|currency }} €</p>
+                            <p class="text-[10px] sm:text-xs text-accent">→ Invest</p>
+                            <p class="font-mono text-xs sm:text-sm text-accent">{{ month.investment_allocation|currency }}</p>
                         </div>
 
                         <!-- Disponibile -->
-                        <div class="pt-2 border-t border-border">
-                            <p class="text-xs text-muted-foreground">Spendibile</p>
-                            <p class="font-mono text-sm font-bold">{{ month.available|currency }} €</p>
+                        <div class="pt-1.5 sm:pt-2 border-t border-border">
+                            <p class="text-[10px] sm:text-xs text-muted-foreground">Spendibile</p>
+                            <p class="font-mono text-xs sm:text-sm font-bold">{{ month.available|currency }}</p>
                         </div>
 
                         <!-- Scadenza fiscale -->
                         {% if month.tax_payment > 0 %}
-                        <div class="pt-2 border-t border-red-500/30">
-                            <p class="text-xs text-red-500">Pagamento tasse</p>
-                            <p class="font-mono text-sm text-red-500 font-bold">-{{ month.tax_payment|currency }} €</p>
+                        <div class="pt-1.5 sm:pt-2 border-t border-red-500/30">
+                            <p class="text-[10px] sm:text-xs text-red-500">Pagamento</p>
+                            <p class="font-mono text-xs sm:text-sm text-red-500 font-bold">-{{ month.tax_payment|currency }}</p>
                         </div>
                         {% endif %}
                     </div>

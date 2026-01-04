@@ -15,6 +15,7 @@ from app.database import init_db, get_db, SessionLocal
 from app.models import Category, Transaction, Pillar, TaxDeadline, UserProfile, MonthlyIncome
 from app.routers import api
 from app.services import budget
+from app.utils import format_currency, format_percentage, format_date, month_name
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -129,30 +130,7 @@ app.mount("/static", StaticFiles(directory=settings.base_dir / "static"), name="
 templates = Jinja2Templates(directory=settings.base_dir / "templates")
 
 
-# Custom template filters
-def format_currency(value: float) -> str:
-    """Format number as Euro currency."""
-    if value is None:
-        return "0,00"
-    return f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-
-def format_percentage(value: float) -> str:
-    """Format number as percentage."""
-    if value is None:
-        return "0%"
-    return f"{value:.1f}%"
-
-
-def format_date(value) -> str:
-    """Format date in Italian style."""
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        return value
-    return value.strftime("%d/%m/%Y")
-
-
+# Register template filters (imported from utils.py)
 templates.env.filters["currency"] = format_currency
 templates.env.filters["percentage"] = format_percentage
 templates.env.filters["date"] = format_date
@@ -285,25 +263,28 @@ async def setup_submit(
 
 def _update_pillars_from_profile(db: Session, profile: UserProfile):
     """Update pillar settings based on user profile."""
+    # Single query for all pillars
+    pillars = db.query(Pillar).filter(
+        Pillar.name.in_(["emergenza", "tasse", "investimenti"])
+    ).all()
+    pillar_map = {p.name: p for p in pillars}
+
     # Update emergency pillar
-    emergency = db.query(Pillar).filter(Pillar.name == "emergenza").first()
-    if emergency:
-        emergency.target_balance = profile.emergency_target
-        emergency.actual_balance = profile.emergency_balance
+    if "emergenza" in pillar_map:
+        pillar_map["emergenza"].target_balance = profile.emergency_target
+        pillar_map["emergenza"].actual_balance = profile.emergency_balance
 
     # Update tax pillar
-    tasse = db.query(Pillar).filter(Pillar.name == "tasse").first()
-    if tasse:
-        tasse.percentage = profile.tax_percentage
-        tasse.monthly_contribution = profile.monthly_income * profile.tax_percentage
-        tasse.actual_balance = profile.tax_balance
+    if "tasse" in pillar_map:
+        pillar_map["tasse"].percentage = profile.tax_percentage
+        pillar_map["tasse"].monthly_contribution = profile.monthly_income * profile.tax_percentage
+        pillar_map["tasse"].actual_balance = profile.tax_balance
 
     # Update investment pillar
-    invest = db.query(Pillar).filter(Pillar.name == "investimenti").first()
-    if invest:
-        invest.percentage = profile.investment_percentage
-        invest.monthly_contribution = profile.monthly_income * profile.investment_percentage
-        invest.actual_balance = profile.investment_balance
+    if "investimenti" in pillar_map:
+        pillar_map["investimenti"].percentage = profile.investment_percentage
+        pillar_map["investimenti"].monthly_contribution = profile.monthly_income * profile.investment_percentage
+        pillar_map["investimenti"].actual_balance = profile.investment_balance
 
     db.commit()
 
@@ -360,7 +341,7 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
         "summary": summary,
         "pillars": pillars,
         "deadlines": deadline_info,
-        "month_name": _month_name(today.month),
+        "month_name": month_name(today.month),
         "month": today.month,
         "year": today.year,
         "monthly_incomes": monthly_incomes,
@@ -468,7 +449,7 @@ async def annual_summary(request: Request, year: Optional[int] = None, db: Sessi
 
         calendar.append({
             'month': month,
-            'name': _month_name(month),
+            'name': month_name(month),
             'income': month_income,
             'has_extra': False,
             'tax_allocation': tax_allocation,
@@ -521,7 +502,7 @@ async def transactions_page(
         "categories": categories,
         "year": year,
         "month": month,
-        "month_name": _month_name(month)
+        "month_name": month_name(month)
     })
 
 
@@ -587,16 +568,15 @@ async def settings_page(request: Request, db: Session = Depends(get_db)):
     })
 
 
+@app.get("/about", response_class=HTMLResponse)
+async def about_page(request: Request):
+    """About/Landing page explaining the app."""
+    return templates.TemplateResponse("about.html", {"request": request})
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 
-def _month_name(month: int) -> str:
-    """Get Italian month name."""
-    months = [
-        "", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
-        "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"
-    ]
-    return months[month] if 1 <= month <= 12 else ""
