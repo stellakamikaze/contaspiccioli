@@ -6,7 +6,7 @@
 <div class="space-y-8">
     <!-- Header -->
     <div>
-        <h1 class="text-3xl font-bold">Impostazioni</h1>
+        <h1 class="text-3xl font-display font-bold">Impostazioni</h1>
         <p class="text-muted-foreground">Gestione categorie e parametri</p>
     </div>
 
@@ -61,7 +61,7 @@
                             hx-confirm="Eliminare questa categoria?"
                             hx-swap="none"
                             hx-on::after-request="location.reload()"
-                            class="text-muted-foreground hover:text-accent-red">
+                            class="text-muted-foreground hover:text-red-500 transition-colors">
 
                     </button>
                 </div>
@@ -91,7 +91,7 @@
                             hx-confirm="Eliminare questa categoria?"
                             hx-swap="none"
                             hx-on::after-request="location.reload()"
-                            class="text-muted-foreground hover:text-accent-red">
+                            class="text-muted-foreground hover:text-red-500 transition-colors">
 
                     </button>
                 </div>
@@ -108,18 +108,18 @@
               hx-on::after-request="location.reload()"
               class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <input type="text" name="name" placeholder="Nome categoria" required
-                   class="bg-muted border border-border rounded px-3 py-2">
+                   class="input px-4 py-2.5">
             <select name="type" required
-                    class="bg-muted border border-border rounded px-3 py-2">
+                    class="input px-4 py-2.5">
                 <option value="fissa">Spesa fissa</option>
                 <option value="variabile">Spesa variabile</option>
             </select>
             <input type="number" name="monthly_budget" step="0.01" placeholder="Budget mensile"
-                   class="bg-muted border border-border rounded px-3 py-2">
+                   class="input px-4 py-2.5">
             <input type="text" name="icon" placeholder="Emoji" maxlength="4"
-                   class="bg-muted border border-border rounded px-3 py-2">
+                   class="input px-4 py-2.5">
             <button type="submit"
-                    class="bg-accent text-white rounded px-4 py-2 hover:bg-accent/90 transition">
+                    class="btn-primary px-5 py-2.5">
                 Aggiungi
             </button>
         </form>

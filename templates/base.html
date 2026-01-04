@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,15 +12,33 @@
             theme: {
                 extend: {
                     colors: {
-                        background: '#0A0A0A',
+                        background: '#0A0A0F',
+                        'background-alt': '#12121A',
                         foreground: '#FAFAFA',
-                        muted: '#1A1A1A',
-                        'muted-foreground': '#737373',
-                        accent: '#10B981',
-                        'accent-red': '#EF4444',
-                        'accent-yellow': '#F59E0B',
-                        border: '#262626',
-                        card: '#0F0F0F',
+                        muted: '#1A1A24',
+                        'muted-foreground': '#71717A',
+                        accent: '#F59E0B',
+                        'accent-foreground': '#0A0A0F',
+                        'accent-muted': 'rgba(245, 158, 11, 0.15)',
+                        border: 'rgba(255, 255, 255, 0.08)',
+                        'border-hover': 'rgba(255, 255, 255, 0.15)',
+                        card: 'rgba(26, 26, 36, 0.6)',
+                        'card-solid': '#1A1A24',
+                        ring: '#F59E0B',
+                    },
+                    fontFamily: {
+                        'display': ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+                        'body': ['Inter', 'system-ui', 'sans-serif'],
+                        'mono': ['"JetBrains Mono"', 'monospace'],
+                    },
+                    boxShadow: {
+                        'glow-sm': '0 0 20px rgba(245, 158, 11, 0.15)',
+                        'glow-md': '0 0 40px rgba(245, 158, 11, 0.2)',
+                        'glow-lg': '0 0 60px rgba(245, 158, 11, 0.25)',
+                        'glow-button': '0 0 20px rgba(245, 158, 11, 0.4)',
+                    },
+                    backdropBlur: {
+                        'glass': '8px',
                     }
                 }
             }
@@ -28,60 +46,258 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.1) transparent;
+        }
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0A0A0A;
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: #0A0A0F;
             color: #FAFAFA;
+            min-height: 100vh;
         }
+
+        /* Ambient background */
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.03;
+        }
+        .ambient-orb-1 {
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: #F59E0B;
+        }
+        .ambient-orb-2 {
+            bottom: -300px;
+            right: -200px;
+            width: 500px;
+            height: 500px;
+            background: #F59E0B;
+        }
+
+        /* Subtle noise texture */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.015;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            z-index: 0;
+        }
+
+        /* Glass card effect */
         .card {
-            background-color: #0F0F0F;
-            border: 1px solid #262626;
-            border-radius: 0.75rem;
+            background: rgba(26, 26, 36, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            transition: all 300ms ease-out;
         }
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .card-interactive:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(26, 26, 36, 0.8);
+            transform: scale(1.01);
+        }
+        .card-highlight {
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2), 0 0 30px rgba(245, 158, 11, 0.1);
+        }
+
+        /* Progress bars */
         .progress-bar {
-            background-color: #262626;
+            background-color: rgba(255, 255, 255, 0.08);
             border-radius: 9999px;
             overflow: hidden;
         }
         .progress-fill {
             height: 100%;
             border-radius: 9999px;
-            transition: width 0.3s ease;
+            transition: width 0.5s ease-out;
         }
+
+        /* Navigation */
         .nav-link {
-            transition: all 0.2s ease;
+            position: relative;
+            color: #71717A;
+            transition: all 200ms ease-out;
+            padding: 0.5rem 0;
         }
         .nav-link:hover {
-            color: #10B981;
+            color: #FAFAFA;
         }
         .nav-link.active {
-            color: #10B981;
-            border-bottom: 2px solid #10B981;
+            color: #F59E0B;
+        }
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #F59E0B;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: #F59E0B;
+            color: #0A0A0F;
+            border: none;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 200ms ease-out;
+        }
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        .btn-primary:focus-visible {
+            outline: none;
+            ring: 2px;
+            ring-color: #F59E0B;
+            ring-offset: 2px;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #FAFAFA;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 200ms ease-out;
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+        .btn-secondary:active {
+            transform: scale(0.98);
+        }
+
+        /* Form inputs */
+        .input {
+            background: rgba(26, 26, 36, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            color: #FAFAFA;
+            transition: all 200ms ease-out;
+        }
+        .input::placeholder {
+            color: #71717A;
+        }
+        .input:focus {
+            outline: none;
+            border-color: rgba(245, 158, 11, 0.5);
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2), 0 0 20px rgba(245, 158, 11, 0.1);
+        }
+
+        /* Typography */
+        .font-display {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            letter-spacing: -0.025em;
+        }
+
+        /* Glow effects */
+        .glow-amber {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+        }
+
+        /* Badge with pulse */
+        .badge-pulse {
+            position: relative;
+        }
+        .badge-pulse::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background: #F59E0B;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 4px rgba(245, 158, 11, 0); }
         }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="relative z-10">
+    <!-- Ambient background orbs -->
+    <div class="ambient-bg">
+        <div class="ambient-orb ambient-orb-1"></div>
+        <div class="ambient-orb ambient-orb-2"></div>
+    </div>
+
     <!-- Navigation -->
-    <nav class="border-b border-border">
-        <div class="max-w-6xl mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <a href="/" class="text-2xl font-bold text-accent">Contaspiccioli</a>
-                <div class="flex gap-6">
-                    <a href="/" class="nav-link py-2 {% if request.url.path == '/' %}active{% endif %}">Dashboard</a>
-                    <a href="/transactions" class="nav-link py-2 {% if '/transactions' in request.url.path %}active{% endif %}">Transazioni</a>
-                    <a href="/pillars" class="nav-link py-2 {% if '/pillars' in request.url.path %}active{% endif %}">Pilastri</a>
-                    <a href="/settings" class="nav-link py-2 {% if '/settings' in request.url.path %}active{% endif %}">Impostazioni</a>
+    <nav class="border-b border-white/[0.08] backdrop-blur-sm bg-background/80 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 md:px-8 lg:px-12">
+            <div class="flex items-center justify-between h-16">
+                <a href="/" class="font-display text-2xl font-bold text-accent hover:text-accent/90 transition-colors">
+                    Contaspiccioli
+                </a>
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">Dashboard</a>
+                    <a href="/summary" class="nav-link {% if '/summary' in request.url.path %}active{% endif %}">Prospetto</a>
+                    <a href="/pillars" class="nav-link {% if '/pillars' in request.url.path %}active{% endif %}">Pilastri</a>
+                    <a href="/setup?step=1" class="nav-link {% if '/setup' in request.url.path %}active{% endif %}">Configura</a>
                 </div>
+                <!-- Mobile menu button -->
+                <button class="md:hidden p-2 text-muted-foreground hover:text-foreground transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </nav>
 
     <!-- Main content -->
-    <main class="max-w-6xl mx-auto px-4 py-8">
+    <main class="max-w-6xl mx-auto px-6 md:px-8 lg:px-12 py-8 md:py-12 lg:py-16 relative z-10">
         {% block content %}{% endblock %}
     </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/[0.08] mt-auto">
+        <div class="max-w-6xl mx-auto px-6 md:px-8 lg:px-12 py-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+                <p>Contaspiccioli &mdash; Gestione flusso di cassa basata sui 4 Pilastri</p>
+                <p class="font-mono text-xs">Metodo Prof. Paolo Coletti</p>
+            </div>
+        </div>
+    </footer>
 
     <!-- Toast container -->
     <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
@@ -92,13 +308,13 @@
             const toast = document.createElement('div');
 
             const colors = {
-                'success': 'bg-accent',
-                'error': 'bg-accent-red',
-                'warning': 'bg-accent-yellow',
-                'info': 'bg-blue-500'
+                'success': 'bg-accent text-accent-foreground',
+                'error': 'bg-red-500 text-white',
+                'warning': 'bg-amber-500 text-black',
+                'info': 'bg-muted text-foreground border border-white/10'
             };
 
-            toast.className = `${colors[type]} text-white px-4 py-2 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            toast.className = `${colors[type]} px-4 py-3 rounded-lg shadow-lg backdrop-blur-sm transform transition-all duration-300 translate-x-full`;
             toast.textContent = message;
             container.appendChild(toast);
 

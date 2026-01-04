@@ -6,18 +6,18 @@
 <div class="space-y-8">
     <!-- Header -->
     <div>
-        <h1 class="text-3xl font-bold">I 4 Pilastri</h1>
+        <h1 class="text-3xl font-display font-bold">I 4 Pilastri</h1>
         <p class="text-muted-foreground">Gestione e riconciliazione dei saldi</p>
     </div>
 
     <!-- Explanation -->
-    <div class="card p-6 bg-muted/50">
-        <h3 class="font-semibold mb-2">Come funziona</h3>
-        <ul class="text-sm text-muted-foreground space-y-1">
-            <li><strong>1 Conto corrente:</strong> Spese quotidiane (fisse + variabili)</li>
-            <li><strong>2 XEON Emergenza:</strong> Fondo di emergenza intoccabile</li>
-            <li><strong>3 XEON Tasse:</strong> Accantonamento per tasse (31.43% mensile)</li>
-            <li><strong>4 ETF Investimenti:</strong> Accumulo per investimenti (9.74% mensile)</li>
+    <div class="card card-highlight p-6">
+        <h3 class="font-display font-semibold mb-3">Come funziona</h3>
+        <ul class="text-sm text-muted-foreground space-y-2">
+            <li><span class="text-accent font-medium">1° Conto corrente:</span> Spese quotidiane (fisse + variabili)</li>
+            <li><span class="text-accent font-medium">2° XEON Emergenza:</span> Fondo di emergenza intoccabile</li>
+            <li><span class="text-accent font-medium">3° XEON Tasse:</span> Accantonamento per tasse (31.43% mensile)</li>
+            <li><span class="text-accent font-medium">4° ETF Investimenti:</span> Accumulo per investimenti (9.74% mensile)</li>
         </ul>
     </div>
 
@@ -58,7 +58,7 @@
                 <hr class="border-border">
                 <div class="flex justify-between">
                     <span class="text-muted-foreground">Differenza:</span>
-                    <span class="font-semibold {% if pillar.difference >= 0 %}text-accent{% else %}text-accent-red{% endif %}">
+                    <span class="font-semibold {% if pillar.difference >= 0 %}text-accent{% else %}text-red-500{% endif %}">
                         {% if pillar.difference >= 0 %}+{% endif %}{{ pillar.difference|currency }}
                     </span>
                 </div>
@@ -70,12 +70,12 @@
                   hx-on::after-request="location.reload()"
                   class="mt-4 pt-4 border-t border-border">
                 <label class="block text-sm text-muted-foreground mb-2">Aggiorna saldo reale:</label>
-                <div class="flex gap-2">
+                <div class="flex gap-3">
                     <input type="number" name="actual_balance" step="0.01"
                            value="{{ pillar.actual }}"
-                           class="flex-1 bg-muted border border-border rounded px-3 py-2">
+                           class="input flex-1 px-4 py-2.5">
                     <button type="submit"
-                            class="px-4 py-2 bg-accent text-white rounded hover:bg-accent/90 transition">
+                            class="btn-primary px-5 py-2.5">
                         Riconcilia
                     </button>
                 </div>

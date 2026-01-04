@@ -83,6 +83,7 @@ def get_pillar_summary(db: Session) -> List[Dict]:
             'actual': p.actual_balance,
             'difference': p.actual_balance - theoretical,
             'percentage': p.percentage,
+            'monthly_contribution': p.monthly_contribution,
             'last_reconciled': p.last_reconciled
         })
 

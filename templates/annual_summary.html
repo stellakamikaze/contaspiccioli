@@ -7,10 +7,10 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold">Prospetto {{ year }}</h1>
+            <h1 class="text-3xl font-display font-bold">Prospetto {{ year }}</h1>
             <p class="text-muted-foreground">Basato sui tuoi dati di configurazione</p>
         </div>
-        <a href="/" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition">
+        <a href="/" class="btn-primary px-5 py-2.5">
             Vai alla Dashboard →
         </a>
     </div>
@@ -96,7 +96,7 @@
                 </div>
                 <div class="p-3 bg-gray-500/20 rounded">
                     <p class="text-gray-400 font-medium">Avanzo/Emergenza</p>
-                    <p class="text-lg font-bold {% if remainder >= 0 %}text-accent{% else %}text-accent-red{% endif %}">{{ remainder|currency }} €</p>
+                    <p class="text-lg font-bold {% if remainder >= 0 %}text-accent{% else %}text-red-500{% endif %}">{{ remainder|currency }} €</p>
                     <p class="text-xs text-muted-foreground">{% if remainder >= 0 %}buffer{% else %}deficit{% endif %}</p>
                 </div>
             </div>
@@ -186,9 +186,9 @@
 
                         <!-- Scadenza fiscale -->
                         {% if month.tax_payment > 0 %}
-                        <div class="pt-2 border-t border-accent-red/30">
-                            <p class="text-xs text-accent-red">Pagamento tasse</p>
-                            <p class="font-mono text-sm text-accent-red font-bold">-{{ month.tax_payment|currency }} €</p>
+                        <div class="pt-2 border-t border-red-500/30">
+                            <p class="text-xs text-red-500">Pagamento tasse</p>
+                            <p class="font-mono text-sm text-red-500 font-bold">-{{ month.tax_payment|currency }} €</p>
                         </div>
                         {% endif %}
                     </div>
@@ -243,10 +243,10 @@
 
     <!-- Pulsanti -->
     <div class="flex gap-4 justify-center">
-        <a href="/setup?step=1" class="px-6 py-3 bg-muted rounded-lg hover:bg-border transition">
+        <a href="/setup?step=1" class="btn-secondary px-6 py-3">
             ← Modifica configurazione
         </a>
-        <a href="/" class="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition font-medium">
+        <a href="/" class="btn-primary px-6 py-3 font-medium">
             Vai alla Dashboard →
         </a>
     </div>
