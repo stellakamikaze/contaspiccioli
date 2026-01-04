@@ -18,7 +18,10 @@
     <!-- INTROITI SECTION -->
     <div class="card p-6">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-semibold">Introiti {{ month_name }}</h2>
+            <div>
+                <h2 class="text-xl font-semibold">Introiti {{ month_name }}</h2>
+                <p class="text-xs text-muted-foreground">Aggiungi entrate extra solo per questo mese</p>
+            </div>
             <button onclick="document.getElementById('income-modal').classList.remove('hidden')"
                     class="btn-primary px-4 py-2 text-sm">
                 + Aggiungi
@@ -61,14 +64,27 @@
 
         <div class="mt-4 pt-4 border-t border-border flex justify-between items-center">
             <div>
-                <p class="text-sm text-muted-foreground">Totale mese</p>
+                <p class="text-sm text-muted-foreground">Totale {{ month_name }}</p>
                 <p class="text-2xl font-bold">{{ total_income|currency }} €</p>
             </div>
             <div class="text-right">
-                <p class="text-sm text-muted-foreground">Proiezione anno</p>
-                <p class="text-xl font-medium text-muted-foreground">{{ (total_income * 12)|currency }} €</p>
+                <p class="text-sm text-muted-foreground">Base mensile</p>
+                <p class="text-lg font-medium text-muted-foreground">{{ profile.monthly_income|currency }} €</p>
+                {% if total_income > profile.monthly_income %}
+                <p class="text-xs text-accent">+{{ (total_income - profile.monthly_income)|currency }} € extra questo mese</p>
+                {% endif %}
             </div>
         </div>
+
+        <!-- Info box -->
+        {% if total_income > profile.monthly_income %}
+        <div class="mt-4 p-3 bg-accent/10 border border-accent/20 rounded-lg">
+            <p class="text-xs text-accent">
+                <span class="font-medium">Nota:</span> Gli introiti extra si applicano solo a {{ month_name }}.
+                La proiezione annuale nel Prospetto usa sempre la base mensile di {{ profile.monthly_income|currency }} €.
+            </p>
+        </div>
+        {% endif %}
     </div>
 
     <!-- ALLOCAZIONE AUTOMATICA -->
@@ -122,6 +138,50 @@
                     <div class="progress-fill bg-accent" style="width: 100%"></div>
                 </div>
                 <p class="text-xs text-muted-foreground mt-1">→ ETF</p>
+            </div>
+        </div>
+
+        <!-- Checkbox versamenti -->
+        <div class="mt-6 pt-6 border-t border-border">
+            <h3 class="text-sm font-medium mb-4">Hai già effettuato questi versamenti per {{ month_name }}?</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form action="/update-monthly-payment" method="POST" class="flex items-center justify-between p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                    <input type="hidden" name="payment_type" value="tax">
+                    <input type="hidden" name="year" value="{{ year }}">
+                    <input type="hidden" name="month" value="{{ month }}">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" name="paid" id="tax_paid"
+                               {% if profile.tax_paid_this_month %}checked{% endif %}
+                               onchange="this.form.submit()"
+                               class="w-5 h-5 rounded bg-muted border-amber-500/30 accent-amber-500">
+                        <label for="tax_paid" class="cursor-pointer">
+                            <p class="text-sm font-medium text-amber-400">Versato {{ allocations.tax|currency }} € per tasse</p>
+                            <p class="text-xs text-muted-foreground">Sul conto deposito XEON Tasse</p>
+                        </label>
+                    </div>
+                    {% if profile.tax_paid_this_month %}
+                    <span class="text-xs text-amber-400 bg-amber-500/20 px-2 py-1 rounded">✓ Fatto</span>
+                    {% endif %}
+                </form>
+
+                <form action="/update-monthly-payment" method="POST" class="flex items-center justify-between p-4 bg-accent/10 border border-accent/20 rounded-lg">
+                    <input type="hidden" name="payment_type" value="investment">
+                    <input type="hidden" name="year" value="{{ year }}">
+                    <input type="hidden" name="month" value="{{ month }}">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" name="paid" id="invest_paid"
+                               {% if profile.investment_paid_this_month %}checked{% endif %}
+                               onchange="this.form.submit()"
+                               class="w-5 h-5 rounded bg-muted border-accent/30 accent-accent">
+                        <label for="invest_paid" class="cursor-pointer">
+                            <p class="text-sm font-medium text-accent">Investito {{ allocations.investment|currency }} € in ETF</p>
+                            <p class="text-xs text-muted-foreground">PAC su VWCE, SWDA o simili</p>
+                        </label>
+                    </div>
+                    {% if profile.investment_paid_this_month %}
+                    <span class="text-xs text-accent bg-accent/20 px-2 py-1 rounded">✓ Fatto</span>
+                    {% endif %}
+                </form>
             </div>
         </div>
     </div>

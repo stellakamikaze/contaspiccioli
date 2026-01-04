@@ -214,6 +214,7 @@ async def setup_submit(
     tax_balance: Optional[float] = Form(None),
     investment_balance: Optional[float] = Form(None),
     taxes_paid_ytd: Optional[float] = Form(None),
+    prior_year_tax_advance: Optional[float] = Form(None),
     db: Session = Depends(get_db)
 ):
     """Handle onboarding form submissions."""
@@ -267,6 +268,8 @@ async def setup_submit(
             profile.investment_balance = investment_balance
         if taxes_paid_ytd is not None:
             profile.taxes_paid_ytd = taxes_paid_ytd
+        if prior_year_tax_advance is not None:
+            profile.prior_year_tax_advance = prior_year_tax_advance
         profile.setup_completed = True
 
         # Update pillars with profile data
@@ -358,6 +361,7 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
         "pillars": pillars,
         "deadlines": deadline_info,
         "month_name": _month_name(today.month),
+        "month": today.month,
         "year": today.year,
         "monthly_incomes": monthly_incomes,
         "total_income": total_income,
@@ -384,6 +388,30 @@ async def add_income(
         received_date=today if is_received == "true" else None
     )
     db.add(income)
+    db.commit()
+    return RedirectResponse(url="/", status_code=303)
+
+
+@app.post("/update-monthly-payment")
+async def update_monthly_payment(
+    request: Request,
+    payment_type: str = Form(...),
+    year: int = Form(...),
+    month: int = Form(...),
+    paid: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
+):
+    """Update monthly payment checkbox (tax or investment)."""
+    profile = get_or_create_profile(db)
+
+    # Checkbox is checked if 'paid' is present in form data
+    is_paid = paid is not None
+
+    if payment_type == "tax":
+        profile.tax_paid_this_month = is_paid
+    elif payment_type == "investment":
+        profile.investment_paid_this_month = is_paid
+
     db.commit()
     return RedirectResponse(url="/", status_code=303)
 

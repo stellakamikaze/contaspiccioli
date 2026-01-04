@@ -170,14 +170,28 @@
 
         {% elif step == 3 %}
         <!-- Step 3: Spese Variabili -->
+        {% set income = profile.monthly_income or 4500 %}
+        {% set fixed = (profile.rent or 700) + (profile.subscriptions or 100) + (profile.other_fixed or 135) %}
+        {% set tax_pct = 0.31 if profile.income_type == 'piva_forfettario' else (0.40 if profile.income_type == 'piva_ordinario' else 0) %}
+        {% set invest_pct = 0.10 %}
+        {% set available_for_variable = income - fixed - (income * tax_pct) - (income * invest_pct) %}
+        {% set suggested_variable = (available_for_variable * 0.85)|round(-1) %}
+
         <div class="space-y-6">
+            <!-- Suggerimento calcolato -->
+            <div class="card-highlight p-5">
+                <p class="text-sm text-muted-foreground mb-2">In base ai tuoi dati, hai circa:</p>
+                <p class="font-display text-3xl font-bold text-accent">{{ suggested_variable|int }} €/mese</p>
+                <p class="text-xs text-muted-foreground mt-1">disponibili per le spese variabili (dopo fisse, tasse e investimenti)</p>
+            </div>
+
             <div class="space-y-3">
                 <label class="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <span class="text-lg">🛒</span> Spesa alimentare
                 </label>
                 <div class="relative">
                     <input type="number" name="food_budget" step="10"
-                           value="{{ profile.food_budget or 350 }}"
+                           value="{{ profile.food_budget or (suggested_variable * 0.25)|round(-1)|int }}"
                            class="input w-full px-5 py-3 font-mono pr-16">
                     <span class="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                 </div>
@@ -190,7 +204,7 @@
                 </label>
                 <div class="relative">
                     <input type="number" name="restaurants_budget" step="10"
-                           value="{{ profile.restaurants_budget or 400 }}"
+                           value="{{ profile.restaurants_budget or (suggested_variable * 0.30)|round(-1)|int }}"
                            class="input w-full px-5 py-3 font-mono pr-16">
                     <span class="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                 </div>
@@ -203,7 +217,7 @@
                 </label>
                 <div class="relative">
                     <input type="number" name="transport_budget" step="10"
-                           value="{{ profile.transport_budget or 210 }}"
+                           value="{{ profile.transport_budget or (suggested_variable * 0.15)|round(-1)|int }}"
                            class="input w-full px-5 py-3 font-mono pr-16">
                     <span class="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                 </div>
@@ -216,7 +230,7 @@
                 </label>
                 <div class="relative">
                     <input type="number" name="shopping_budget" step="10"
-                           value="{{ profile.shopping_budget or 400 }}"
+                           value="{{ profile.shopping_budget or (suggested_variable * 0.30)|round(-1)|int }}"
                            class="input w-full px-5 py-3 font-mono pr-16">
                     <span class="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                 </div>
@@ -226,16 +240,30 @@
             <div class="card-highlight p-5 mt-8">
                 <div class="flex justify-between items-center">
                     <span class="text-muted-foreground">Totale budget variabile</span>
-                    <span class="font-display text-2xl font-bold text-accent">
-                        {{ (profile.food_budget or 350) + (profile.restaurants_budget or 400) + (profile.transport_budget or 210) + (profile.shopping_budget or 400) }} €
+                    <span class="font-display text-2xl font-bold text-accent" id="variable-total">
+                        {{ (profile.food_budget or (suggested_variable * 0.25)|round(-1)|int) + (profile.restaurants_budget or (suggested_variable * 0.30)|round(-1)|int) + (profile.transport_budget or (suggested_variable * 0.15)|round(-1)|int) + (profile.shopping_budget or (suggested_variable * 0.30)|round(-1)|int) }} €
                     </span>
                 </div>
-                <p class="text-xs text-muted-foreground mt-2">Flessibile in base ai tuoi introiti</p>
+                <p class="text-xs text-muted-foreground mt-2">
+                    {% if ((profile.food_budget or 0) + (profile.restaurants_budget or 0) + (profile.transport_budget or 0) + (profile.shopping_budget or 0)) > suggested_variable %}
+                        <span class="text-red-400">Attenzione: supera il budget disponibile</span>
+                    {% else %}
+                        Flessibile in base ai tuoi introiti
+                    {% endif %}
+                </p>
             </div>
         </div>
 
         {% elif step == 4 %}
         <!-- Step 4: I 4 Pilastri -->
+        {% set income = profile.monthly_income or 4500 %}
+        {% set fixed = (profile.rent or 700) + (profile.subscriptions or 100) + (profile.other_fixed or 135) %}
+        {% set variable = (profile.food_budget or 350) + (profile.restaurants_budget or 400) + (profile.transport_budget or 210) + (profile.shopping_budget or 400) %}
+        {% set monthly_expenses = fixed + variable %}
+        {% set suggested_emergency = (monthly_expenses * 6)|round(-2) %}
+        {% set suggested_tax = 31 if profile.income_type == 'piva_forfettario' else (40 if profile.income_type == 'piva_ordinario' else 0) %}
+        {% set suggested_invest = 10 if profile.income_type == 'stipendio' else 15 %}
+
         <div class="space-y-8">
             <!-- Spiegazione Pilastri -->
             <div class="card-highlight p-6 space-y-4">
@@ -281,11 +309,15 @@
                 </label>
                 <div class="relative">
                     <input type="number" name="emergency_target" step="1000"
-                           value="{{ profile.emergency_target or 10000 }}"
+                           value="{{ profile.emergency_target or suggested_emergency|int }}"
                            class="input w-full px-5 py-3 font-mono pr-16">
                     <span class="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                 </div>
-                <p class="text-xs text-muted-foreground">Consigliato: 3-6 mesi di spese. Raggiunto il target, stop ai versamenti.</p>
+                <div class="p-3 rounded-lg bg-accent/10 border border-accent/20 text-xs space-y-1 mt-2">
+                    <p class="text-accent font-medium">Suggerito per te: {{ suggested_emergency|int }} €</p>
+                    <p class="text-muted-foreground">= 6 mesi × {{ monthly_expenses|int }} € di spese mensili (fisse + variabili)</p>
+                </div>
+                <p class="text-xs text-muted-foreground">Raggiunto il target, stop ai versamenti.</p>
             </div>
 
             <div class="space-y-3">
@@ -294,7 +326,7 @@
                 </label>
                 <div class="relative">
                     <input type="number" name="tax_percentage" step="1" min="0" max="50"
-                           value="{{ ((profile.tax_percentage or 0.31) * 100)|round|int }}"
+                           value="{{ ((profile.tax_percentage or (suggested_tax / 100)) * 100)|round|int }}"
                            class="input w-full px-5 py-3 font-mono pr-16">
                     <span class="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
                 </div>
@@ -311,11 +343,15 @@
                 </label>
                 <div class="relative">
                     <input type="number" name="investment_percentage" step="1" min="0" max="50"
-                           value="{{ ((profile.investment_percentage or 0.15) * 100)|round|int }}"
+                           value="{{ ((profile.investment_percentage or (suggested_invest / 100)) * 100)|round|int }}"
                            class="input w-full px-5 py-3 font-mono pr-16">
                     <span class="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
                 </div>
-                <div class="p-3 rounded-lg bg-muted/50 text-xs space-y-1">
+                <div class="p-3 rounded-lg bg-accent/10 border border-accent/20 text-xs space-y-1 mt-2">
+                    <p class="text-accent font-medium">Suggerito: {{ suggested_invest }}% = {{ ((income * suggested_invest / 100)|round)|int }} €/mese</p>
+                    <p class="text-muted-foreground">In 12 mesi accumulerai {{ ((income * suggested_invest / 100 * 12)|round)|int }} € in ETF</p>
+                </div>
+                <div class="p-3 rounded-lg bg-muted/50 text-xs space-y-1 mt-2">
                     <p><span class="text-accent">Minimo:</span> 10%</p>
                     <p><span class="text-accent">Ideale Coletti:</span> 20-30% (incluso risparmio)</p>
                 </div>
@@ -329,6 +365,7 @@
                 <label class="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <span class="text-lg">🏦</span> 1° Pilastro — Saldo Conto Corrente
                 </label>
+                <p class="text-xs text-muted-foreground -mt-1 mb-2">Quanti soldi hai al momento sul conto corrente?</p>
                 <div class="relative">
                     <input type="number" name="current_balance" step="100"
                            value="{{ profile.current_balance or 0 }}"
@@ -341,6 +378,7 @@
                 <label class="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <span class="text-lg">🛡️</span> 2° Pilastro — Fondo Emergenza
                 </label>
+                <p class="text-xs text-muted-foreground -mt-1 mb-2">Quanto hai già accantonato per le emergenze? (es. conto deposito XEON)</p>
                 <div class="relative">
                     <input type="number" name="emergency_balance" step="100"
                            value="{{ profile.emergency_balance or 0 }}"
@@ -353,6 +391,7 @@
                 <label class="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <span class="text-lg">📋</span> 3° Pilastro — Conto Tasse
                 </label>
+                <p class="text-xs text-muted-foreground -mt-1 mb-2">Quanto hai già da parte per pagare le prossime tasse?</p>
                 <div class="relative">
                     <input type="number" name="tax_balance" step="100"
                            value="{{ profile.tax_balance or 0 }}"
@@ -365,6 +404,7 @@
                 <label class="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <span class="text-lg">📈</span> 4° Pilastro — Investimenti
                 </label>
+                <p class="text-xs text-muted-foreground -mt-1 mb-2">Quanto hai già investito in ETF o fondi? (valore attuale)</p>
                 <div class="relative">
                     <input type="number" name="investment_balance" step="100"
                            value="{{ profile.investment_balance or 0 }}"
@@ -373,16 +413,33 @@
                 </div>
             </div>
 
+            <hr class="border-border my-6">
+
             <div class="space-y-3">
                 <label class="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    Tasse già pagate quest'anno
+                    <span class="text-lg">📅</span> Tasse già pagate quest'anno
                 </label>
+                <p class="text-xs text-muted-foreground -mt-1 mb-2">Acconti, saldi o contributi INPS già versati nel {{ now().year }}</p>
                 <div class="relative">
                     <input type="number" name="taxes_paid_ytd" step="100"
                            value="{{ profile.taxes_paid_ytd or 0 }}"
                            class="input w-full px-5 py-3 font-mono pr-16">
                     <span class="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                 </div>
+            </div>
+
+            <div class="space-y-3">
+                <label class="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <span class="text-lg">⏪</span> Anticipo tasse anno precedente
+                </label>
+                <p class="text-xs text-muted-foreground -mt-1 mb-2">Quanto hai versato come anticipo lo scorso anno? (influenza il saldo a giugno)</p>
+                <div class="relative">
+                    <input type="number" name="prior_year_tax_advance" step="100"
+                           value="{{ profile.prior_year_tax_advance or 0 }}"
+                           class="input w-full px-5 py-3 font-mono pr-16">
+                    <span class="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                </div>
+                <p class="text-xs text-accent/70">Questo importo verrà detratto dal saldo tasse a giugno</p>
             </div>
         </div>
         {% endif %}

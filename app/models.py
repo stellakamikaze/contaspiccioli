@@ -134,6 +134,11 @@ class UserProfile(Base):
     tax_balance = Column(Float, default=0.0)          # 3° Pilastro - Conto tasse
     investment_balance = Column(Float, default=0.0)   # 4° Pilastro - Investimenti
     taxes_paid_ytd = Column(Float, default=0.0)
+    prior_year_tax_advance = Column(Float, default=0.0)  # Anticipo tasse pagato anno precedente
+
+    # Monthly payment tracking
+    tax_paid_this_month = Column(Boolean, default=False)
+    investment_paid_this_month = Column(Boolean, default=False)
 
     # P.IVA settings
     inps_rate = Column(Float, default=0.2598)

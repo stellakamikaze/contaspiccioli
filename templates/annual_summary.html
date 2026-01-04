@@ -72,34 +72,71 @@
                 {% endif %}
             </div>
 
-            <!-- Dettaglio -->
+            <!-- Dettaglio con "Con questo ci paghi..." -->
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-                <div class="p-3 bg-blue-500/20 rounded">
+                <div class="p-3 bg-blue-500/20 rounded group relative">
                     <p class="text-blue-400 font-medium">1. Spese Fisse</p>
                     <p class="text-lg font-bold">{{ fixed|currency }} €</p>
                     <p class="text-xs text-muted-foreground">{{ (fixed/income*100)|round|int }}% del totale</p>
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10 w-48">
+                        <div class="bg-card-solid border border-border rounded-lg p-3 shadow-lg text-xs">
+                            <p class="font-medium text-blue-400 mb-1">Con questo ci paghi:</p>
+                            <p class="text-muted-foreground">🏠 Affitto/mutuo, 📱 abbonamenti, 📋 commercialista, bollette</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="p-3 bg-amber-500/20 rounded">
+                <div class="p-3 bg-amber-500/20 rounded group relative">
                     <p class="text-amber-400 font-medium">2. Tasse</p>
                     <p class="text-lg font-bold">{{ taxes|currency }} €</p>
                     <p class="text-xs text-muted-foreground">{{ (profile.tax_percentage*100)|round|int }}% accantonato</p>
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10 w-48">
+                        <div class="bg-card-solid border border-border rounded-lg p-3 shadow-lg text-xs">
+                            <p class="font-medium text-amber-400 mb-1">Con questo ci paghi:</p>
+                            <p class="text-muted-foreground">📋 INPS, 💰 IRPEF, saldo e acconti. Va su conto deposito separato.</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="p-3 bg-purple-500/20 rounded">
+                <div class="p-3 bg-purple-500/20 rounded group relative">
                     <p class="text-purple-400 font-medium">3. Variabili</p>
                     <p class="text-lg font-bold">{{ variable_budget|currency }} €</p>
                     <p class="text-xs text-muted-foreground">{{ (variable_budget/income*100)|round|int }}% budget</p>
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10 w-48">
+                        <div class="bg-card-solid border border-border rounded-lg p-3 shadow-lg text-xs">
+                            <p class="font-medium text-purple-400 mb-1">Con questo ci paghi:</p>
+                            <p class="text-muted-foreground">🛒 Spesa, 🍽️ ristoranti, 🚗 trasporti, 🛍️ shopping, svago</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="p-3 bg-accent/20 rounded">
+                <div class="p-3 bg-accent/20 rounded group relative">
                     <p class="text-accent font-medium">4. Investimenti</p>
                     <p class="text-lg font-bold">{{ investments|currency }} €</p>
                     <p class="text-xs text-muted-foreground">{{ (profile.investment_percentage*100)|round|int }}% del reddito</p>
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10 w-48">
+                        <div class="bg-card-solid border border-border rounded-lg p-3 shadow-lg text-xs">
+                            <p class="font-medium text-accent mb-1">Con questo:</p>
+                            <p class="text-muted-foreground">📈 Acquisti ETF azionari globali (VWCE, SWDA). Non toccare per 10+ anni!</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="p-3 bg-gray-500/20 rounded">
+                <div class="p-3 bg-gray-500/20 rounded group relative">
                     <p class="text-gray-400 font-medium">Avanzo/Emergenza</p>
                     <p class="text-lg font-bold {% if remainder >= 0 %}text-accent{% else %}text-red-500{% endif %}">{{ remainder|currency }} €</p>
                     <p class="text-xs text-muted-foreground">{% if remainder >= 0 %}buffer{% else %}deficit{% endif %}</p>
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block z-10 w-48">
+                        <div class="bg-card-solid border border-border rounded-lg p-3 shadow-lg text-xs">
+                            <p class="font-medium text-gray-400 mb-1">Con questo:</p>
+                            <p class="text-muted-foreground">🛡️ Alimenta il fondo emergenza fino al target, poi è extra da investire</p>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <p class="text-xs text-muted-foreground text-center mt-2">Passa il mouse su ogni box per vedere i dettagli</p>
         </div>
     </div>
 
