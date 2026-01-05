@@ -1,10 +1,10 @@
-# CLAUDE.md
+# CLAUDE.md - Contaspiccioli
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Personal finance manager for Italian freelancers (P.IVA forfettaria).
+
+> **⚠️ PRIMA DI INIZIARE:** Consulta il [Google Doc](https://docs.google.com/document/d/1jraxO9VfHwXHvl-RrOMCpuvmh3vGiCzfArLqFserekM/edit) (tab Contaspiccioli) per leggere le indicazioni dell'utente su cosa sviluppare.
 
 ## Project Overview
-
-**Contaspiccioli** - Personal finance manager for Italian freelancers (P.IVA forfettaria).
 
 **Stack:** FastAPI + SQLite + Jinja2 + HTMX + TailwindCSS
 
