@@ -1,6 +1,6 @@
 """Seed data for Contaspiccioli v2.0 - Default pillars and categories."""
 from decimal import Decimal
-from datetime import date
+from typing import TypeVar
 
 from sqlalchemy.orm import Session
 
@@ -8,9 +8,31 @@ from app.models_v2 import (
     Pillar, Category, CategoryType, TaxSettings, TaxRegime, AdvanceMethod, Account, AccountType
 )
 
+T = TypeVar("T")
+
+
+def seed_if_not_exists(
+    db: Session,
+    model: type[T],
+    data_list: list[dict],
+    unique_field: str,
+) -> list[T]:
+    """Crea record solo se non esistono, usando unique_field per il check."""
+    created = []
+    for data in data_list:
+        exists = db.query(model).filter(
+            getattr(model, unique_field) == data[unique_field]
+        ).first()
+        if not exists:
+            record = model(**data)
+            db.add(record)
+            created.append(record)
+    db.commit()
+    return created
+
 
 def seed_pillars(db: Session) -> list[Pillar]:
-    """Seed the 4 pillars from Coletti/Magri guide."""
+    """I 4 pilastri da guida Coletti/Magri."""
     pillars_data = [
         {
             "number": 1,
@@ -57,26 +79,16 @@ def seed_pillars(db: Session) -> list[Pillar]:
             "priority": 4,
         },
     ]
-
-    pillars = []
-    for data in pillars_data:
-        existing = db.query(Pillar).filter(Pillar.number == data["number"]).first()
-        if not existing:
-            pillar = Pillar(**data)
-            db.add(pillar)
-            pillars.append(pillar)
-
-    db.commit()
-    return pillars
+    return seed_if_not_exists(db, Pillar, pillars_data, "number")
 
 
 def seed_accounts(db: Session) -> list[Account]:
-    """Seed Federico's accounts structure."""
+    """Conti bancari di Federico."""
     accounts_data = [
         {
             "name": "BBVA",
             "account_type": AccountType.CHECKING,
-            "notes": "Conto corrente principale - P1 Liquidità",
+            "notes": "Conto corrente principale - P1 Liquidita",
         },
         {
             "name": "Fineco",
@@ -89,22 +101,11 @@ def seed_accounts(db: Session) -> list[Account]:
             "notes": "Solo per pagamento F24 - transito da Fineco",
         },
     ]
-
-    accounts = []
-    for data in accounts_data:
-        existing = db.query(Account).filter(Account.name == data["name"]).first()
-        if not existing:
-            account = Account(**data)
-            db.add(account)
-            accounts.append(account)
-
-    db.commit()
-    return accounts
+    return seed_if_not_exists(db, Account, accounts_data, "name")
 
 
-def seed_categories(db: Session, pillar_p1_id: int = None) -> list[Category]:
-    """Seed default expense categories with keywords for auto-categorization."""
-
+def seed_categories(db: Session, pillar_p1_id: int | None = None) -> list[Category]:
+    """Categorie di spesa/entrata con keywords per auto-categorizzazione."""
     categories_data = [
         # INCOME
         {
@@ -255,30 +256,24 @@ def seed_categories(db: Session, pillar_p1_id: int = None) -> list[Category]:
             "name": "Altro",
             "type": CategoryType.VARIABLE,
             "icon": "📦",
-            "color": "#6B7280",  # Gray
+            "color": "#6B7280",
             "monthly_budget": Decimal("100.00"),
-            "keywords": [],  # Catch-all for uncategorized
+            "keywords": [],
             "display_order": 99,
         },
     ]
 
-    categories = []
-    for data in categories_data:
-        existing = db.query(Category).filter(Category.name == data["name"]).first()
-        if not existing:
-            # Associate with P1 (liquidity) by default for expense categories
-            if data["type"] != CategoryType.INCOME and pillar_p1_id:
+    # Associa categorie spese a P1 (liquidita) di default
+    if pillar_p1_id:
+        for data in categories_data:
+            if data["type"] != CategoryType.INCOME:
                 data["pillar_id"] = pillar_p1_id
-            category = Category(**data)
-            db.add(category)
-            categories.append(category)
 
-    db.commit()
-    return categories
+    return seed_if_not_exists(db, Category, categories_data, "name")
 
 
 def seed_tax_settings(db: Session, year: int = 2026) -> TaxSettings:
-    """Seed tax settings for P.IVA forfettaria."""
+    """Impostazioni fiscali P.IVA forfettaria (ATECO 70.20.09)."""
     existing = db.query(TaxSettings).filter(TaxSettings.year == year).first()
     if existing:
         return existing
@@ -286,20 +281,20 @@ def seed_tax_settings(db: Session, year: int = 2026) -> TaxSettings:
     settings = TaxSettings(
         year=year,
         regime=TaxRegime.FORFETTARIO,
-        coefficient=Decimal("0.78"),       # 78% for ATECO 70.20.09
-        inps_rate=Decimal("0.2607"),        # 26.07% gestione separata 2025/2026
-        tax_rate=Decimal("0.15"),           # 15% (or 5% for first 5 years)
+        coefficient=Decimal("0.78"),
+        inps_rate=Decimal("0.2607"),
+        tax_rate=Decimal("0.15"),
         advance_method=AdvanceMethod.STORICO,
-        min_threshold=Decimal("52.00"),     # Below = no advances
-        single_payment_threshold=Decimal("258.00"),  # Below = single November payment
+        min_threshold=Decimal("52.00"),
+        single_payment_threshold=Decimal("258.00"),
     )
     db.add(settings)
     db.commit()
     return settings
 
 
-def seed_all(db: Session):
-    """Run all seed functions."""
+def seed_all(db: Session) -> dict:
+    """Esegue tutte le funzioni di seed."""
     print("Seeding accounts...")
     accounts = seed_accounts(db)
     print(f"  Created {len(accounts)} accounts")
@@ -308,7 +303,6 @@ def seed_all(db: Session):
     pillars = seed_pillars(db)
     print(f"  Created {len(pillars)} pillars")
 
-    # Get P1 for category association
     p1 = db.query(Pillar).filter(Pillar.number == 1).first()
     p1_id = p1.id if p1 else None
 
