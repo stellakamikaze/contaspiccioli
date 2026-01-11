@@ -1,107 +1,91 @@
-# CLAUDE.md - Contaspiccioli
+# CLAUDE.md - Contaspiccioli v2.0
 
-Personal finance manager for Italian freelancers (P.IVA forfettaria).
+Cash flow planner a 12+ mesi basato sui 4 pilastri di Coletti/Magri.
 
-> **⚠️ PRIMA DI INIZIARE:** Consulta il [Google Doc](https://docs.google.com/document/d/1jraxO9VfHwXHvl-RrOMCpuvmh3vGiCzfArLqFserekM/edit) (tab Contaspiccioli) per leggere le indicazioni dell'utente su cosa sviluppare.
+## Vision
 
-## Project Overview
+**Domanda chiave**: "Quanto ho? Quanto avrò? Dove sto sforando?"
 
-**Stack:** FastAPI + SQLite + Jinja2 + HTMX + TailwindCSS
+- Previsionale 12 mesi (come Excel Federico)
+- Confronto previsto vs effettivo (stile Sibill)
+- Import estratto conto → categorizzazione automatica
+- Suggerimenti allocazione surplus tra pilastri
 
-**Port:** 8001 (to avoid conflict with Phoibos on 8000)
+## Stack
 
-## Quick Start
+- **Backend**: FastAPI + SQLite
+- **Frontend**: Jinja2 + HTMX + TailwindCSS
+- **Port**: 8001
+
+## Comandi
 
 ```bash
-# Start
-colima start --cpu 4 --memory 6 --disk 80
 docker compose up -d --build
-
-# Access
-open http://localhost:8001
-
-# Logs
 docker compose logs -f contaspiccioli
+curl http://localhost:8001/health
 ```
 
-## Architecture
+## I 4 Pilastri
+
+| # | Nome | Target | Strumento | Account Federico |
+|---|------|--------|-----------|------------------|
+| P1 | Liquidità | 3+ mesi spese | C/C | BBVA |
+| P2 | Emergenza | 3-12 mesi | Conto deposito | Fineco (XEON) |
+| P3 | Spese Previste | Tasse + programmate | BTP/obbligazioni | Fineco (XEON) → Fideuram (F24) |
+| P4 | Investimenti | Lungo termine | ETF azionari | Fineco |
+
+## Dati Fiscali Federico
+
+```
+Codice ATECO: 70.20.09 (Consulenza aziendale)
+Regime: Forfettario
+Imposta sostitutiva: 15%
+Coefficiente redditività: 78%
+Cassa: Gestione Separata INPS (26.07%)
+Inizio attività: 21/09/2021
+```
+
+### Scadenze Tasse
+
+- **Luglio**: Saldo anno precedente + 1° acconto (50%)
+- **Novembre**: 2° acconto (50%)
+- **Soglia esonero**: < 52€
+- **Metodo**: Storico (100% imposta, 80% INPS)
+
+## Struttura Progetto
 
 ```
 app/
-├── main.py           # FastAPI app, routes, templates
-├── config.py         # Pydantic settings
-├── database.py       # SQLAlchemy setup
-├── models.py         # Transaction, Category, Pillar, TaxDeadline
-├── routers/
-│   └── api.py        # REST API endpoints
-└── services/
-    ├── budget.py     # Budget calculations
-    └── telegram.py   # Notifications
+├── main.py          # FastAPI + HTML routes
+├── models.py        # Pillar, ForecastMonth, Transaction, PlannedExpense
+├── routers/api.py   # REST API
+├── services/
+│   ├── forecast.py  # Previsionale 12 mesi
+│   ├── pillars.py   # Gestione 4 pilastri
+│   ├── taxes.py     # Calcolo tasse P.IVA
+│   └── bank_import.py # Import CSV estratto conto
 ```
 
-## Key Models
+## Piano Implementazione
 
-| Model | Purpose |
-|-------|---------|
-| `Transaction` | Income/expense records |
-| `Category` | Expense categories (fissa/variabile) |
-| `Pillar` | 4 financial pillars (emergenza, tasse, investimenti) |
-| `TaxDeadline` | Tax payment deadlines |
+Vedi `IMPLEMENTATION_PLAN.md` per il piano completo v2.0.
 
-## Budget Model (4 Pillars)
+**Status**: Refactoring da v1 (pillar-based) a v2 (cash flow planner)
 
-Based on 3.500/month income:
+### Bug Noti da Fixare
 
-| Pillar | % | /month |
-|--------|---|--------|
-| Spese fisse | 33.37% | 1.168 |
-| Spese variabili | 25.46% | 891 |
-| XEON tasse | 31.43% | 1.100 |
-| ETF investimenti | 9.74% | 341 |
+- `_months_elapsed()` in budget.py ignora anno
+- Dual income tracking (MonthlyIncome + Transaction)
+- Tax % hardcoded in config.py
 
-## API Endpoints
+## Sicurezza
 
-```
-GET    /api/transactions      # List with filters
-POST   /api/transactions      # Create
-DELETE /api/transactions/{id} # Delete
+- Dati finanziari sensibili: mai loggare importi
+- Backup regolari del database
+- Validare input su tutte le transazioni
 
-GET    /api/categories        # List active
-POST   /api/categories        # Create
+## Riferimenti
 
-GET    /api/pillars           # List all
-PUT    /api/pillars/{id}/reconcile  # Update actual balance
-
-GET    /api/budget/summary    # Monthly summary
-GET    /api/budget/forecast   # Yearly forecast
-GET    /api/deadlines         # Tax deadlines
-```
-
-## Environment Variables
-
-| Variable | Required | Default |
-|----------|----------|---------|
-| `SECRET_KEY` | Yes | - |
-| `DATABASE_URL` | No | sqlite:///data/contaspiccioli.db |
-| `TELEGRAM_BOT_TOKEN` | No | - |
-| `TELEGRAM_CHAT_ID` | No | - |
-| `DEFAULT_INCOME` | No | 3500 |
-
-## Development
-
-```bash
-# Syntax check
-python -c "import ast; ast.parse(open('app/main.py').read())"
-
-# Rebuild
-docker compose restart contaspiccioli
-```
-
-## Files
-
-- `Contaspiccioli_2026.xlsx` - Excel version for Google Sheets
-- `La guida di Contaspiccioli.md` - Original documentation
-
-## Language
-
-UI and communication in **Italian**.
+- `docs/Guida Educati e Finanziati.pdf` - 4 pilastri Coletti
+- `Bilancio Personale - Federico.xlsx` - Template previsionale
+- `La guida di Contaspiccioli.md` - Documentazione utente
