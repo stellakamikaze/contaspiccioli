@@ -5,7 +5,8 @@ from typing import TypeVar
 from sqlalchemy.orm import Session
 
 from app.models_v2 import (
-    Pillar, Category, CategoryType, TaxSettings, TaxRegime, AdvanceMethod, Account, AccountType
+    Pillar, Category, CategoryType, TaxSettings, TaxRegime, AdvanceMethod,
+    Account, AccountType, UserSettings
 )
 
 T = TypeVar("T")
@@ -293,8 +294,31 @@ def seed_tax_settings(db: Session, year: int = 2026) -> TaxSettings:
     return settings
 
 
+def seed_user_settings(db: Session) -> UserSettings:
+    """Seed default user settings for Federico."""
+    existing = db.query(UserSettings).first()
+    if existing:
+        return existing
+
+    settings = UserSettings(
+        monthly_income=Decimal("3500.00"),
+        average_monthly_expenses=Decimal("3500.00"),
+        setup_completed=True,
+        setup_step=99,
+    )
+    db.add(settings)
+    db.commit()
+    return settings
+
+
 def seed_all(db: Session) -> dict:
     """Esegue tutte le funzioni di seed."""
+    from app.services.pillars_v2 import update_pillar_targets
+
+    print("Seeding user settings...")
+    user_settings = seed_user_settings(db)
+    print(f"  User settings ready (income: {user_settings.monthly_income})")
+
     print("Seeding accounts...")
     accounts = seed_accounts(db)
     print(f"  Created {len(accounts)} accounts")
@@ -302,6 +326,12 @@ def seed_all(db: Session) -> dict:
     print("Seeding pillars...")
     pillars = seed_pillars(db)
     print(f"  Created {len(pillars)} pillars")
+
+    # Update pillar targets based on user settings
+    print("Calculating pillar targets...")
+    updated_pillars = update_pillar_targets(db, user_settings.average_monthly_expenses)
+    for p in updated_pillars:
+        print(f"  P{p.number} target: {p.target_balance}")
 
     p1 = db.query(Pillar).filter(Pillar.number == 1).first()
     p1_id = p1.id if p1 else None
@@ -316,6 +346,7 @@ def seed_all(db: Session) -> dict:
 
     print("\nSeed complete!")
     return {
+        "user_settings": user_settings,
         "accounts": accounts,
         "pillars": pillars,
         "categories": categories,

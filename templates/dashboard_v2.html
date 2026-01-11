@@ -1,162 +1,424 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard v2 - Contaspiccioli{% endblock %}
+{% block title %}Cash Flow Planner - Contaspiccioli{% endblock %}
 
 {% block content %}
+<style>
+    /* Dashboard-specific animations */
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    .animate-slide-up {
+        animation: slideUp 0.5s ease-out forwards;
+        opacity: 0;
+    }
+    .animate-fade-in {
+        animation: fadeIn 0.4s ease-out forwards;
+        opacity: 0;
+    }
+    .animate-scale-in {
+        animation: scaleIn 0.4s ease-out forwards;
+        opacity: 0;
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+
+    /* Pillar card enhancements */
+    .pillar-card {
+        position: relative;
+        overflow: hidden;
+    }
+    .pillar-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--pillar-color) 0%, transparent 100%);
+        opacity: 0.8;
+    }
+    .pillar-card:hover::before {
+        opacity: 1;
+    }
+    .pillar-number {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+        background: linear-gradient(135deg, var(--pillar-color) 0%, rgba(255,255,255,0.3) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Horizontal timeline */
+    .timeline-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(245, 158, 11, 0.3) transparent;
+    }
+    .timeline-scroll::-webkit-scrollbar {
+        height: 6px;
+    }
+    .timeline-scroll::-webkit-scrollbar-track {
+        background: rgba(255,255,255,0.05);
+        border-radius: 3px;
+    }
+    .timeline-scroll::-webkit-scrollbar-thumb {
+        background: rgba(245, 158, 11, 0.3);
+        border-radius: 3px;
+    }
+    .timeline-month {
+        min-width: 140px;
+        position: relative;
+    }
+    .timeline-month::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 20%;
+        bottom: 20%;
+        width: 1px;
+        background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+    }
+    .timeline-month:last-child::after {
+        display: none;
+    }
+
+    /* Countdown badge */
+    .countdown-badge {
+        position: relative;
+    }
+    .countdown-urgent {
+        animation: pulse-urgent 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-urgent {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    }
+
+    /* Flow indicator */
+    .flow-positive { color: #34D399; }
+    .flow-negative { color: #F87171; }
+
+    /* Guide tooltip */
+    .guide-step {
+        position: relative;
+    }
+    .guide-step::before {
+        content: attr(data-step);
+        position: absolute;
+        top: -8px;
+        left: -8px;
+        width: 20px;
+        height: 20px;
+        background: #F59E0B;
+        color: #0A0A0F;
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
 <div class="space-y-8">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-3xl font-display font-bold">Cash Flow Planner</h1>
-            <p class="text-muted-foreground">{{ month_name }} {{ year }} - I 4 Pilastri</p>
-        </div>
-        <div class="flex items-center gap-3">
-            <span class="text-sm text-muted-foreground">Reddito mensile:</span>
-            <span class="text-xl font-bold text-accent">{{ monthly_income|currency }} &euro;</span>
-        </div>
-    </div>
-
-    <!-- 4 Pillars Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {% for pillar in pillars %}
-        <div class="card p-5 {% if pillar.is_funded %}card-highlight{% endif %}">
-            <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                    <span class="text-2xl">
-                        {% if pillar.number == 1 %}1&#xFE0F;&#x20E3;{% elif pillar.number == 2 %}2&#xFE0F;&#x20E3;{% elif pillar.number == 3 %}3&#xFE0F;&#x20E3;{% else %}4&#xFE0F;&#x20E3;{% endif %}
-                    </span>
-                    <h3 class="font-semibold text-sm">{{ pillar.display_name }}</h3>
-                </div>
-                {% if pillar.is_funded %}
-                <span class="text-xs px-2 py-1 bg-accent/20 text-accent rounded-full">Completo</span>
-                {% endif %}
+    <!-- Hero Header -->
+    <header class="animate-slide-up">
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+            <div>
+                <p class="text-sm text-accent font-mono uppercase tracking-widest mb-2">{{ month_name }} {{ year }}</p>
+                <h1 class="text-4xl lg:text-5xl font-display font-bold tracking-tight">
+                    Cash Flow<br class="sm:hidden"> Planner
+                </h1>
+                <p class="text-muted-foreground mt-2 max-w-md">
+                    Gestisci il tuo flusso di cassa con il metodo dei 4 Pilastri
+                </p>
             </div>
+            <div class="flex items-baseline gap-2 lg:text-right">
+                <span class="text-sm text-muted-foreground">Reddito mensile</span>
+                <span class="text-3xl lg:text-4xl font-display font-bold text-accent">
+                    {{ monthly_income|currency }}<span class="text-lg ml-1">&euro;</span>
+                </span>
+            </div>
+        </div>
+    </header>
 
-            <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                    <span class="text-muted-foreground">Saldo</span>
-                    <span class="font-medium">{{ pillar.current_balance|currency }} &euro;</span>
+    <!-- Quick Guide (collapsible) -->
+    <details class="card p-4 animate-fade-in delay-1 group" open>
+        <summary class="flex items-center justify-between cursor-pointer list-none">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">&#128218;</span>
+                <span class="font-semibold">Come funziona Contaspiccioli</span>
+            </div>
+            <svg class="w-5 h-5 text-muted-foreground transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </summary>
+        <div class="mt-4 pt-4 border-t border-white/5">
+            <div class="grid md:grid-cols-4 gap-4 text-sm">
+                <div class="flex gap-3">
+                    <span class="text-accent font-mono font-bold">01</span>
+                    <div>
+                        <p class="font-medium">Imposta il reddito</p>
+                        <p class="text-muted-foreground text-xs mt-1">Indica quanto guadagni mensilmente da P.IVA</p>
+                    </div>
                 </div>
-                <div class="flex justify-between text-sm">
-                    <span class="text-muted-foreground">Target</span>
-                    <span class="font-medium">{{ pillar.target_balance|currency }} &euro;</span>
+                <div class="flex gap-3">
+                    <span class="text-accent font-mono font-bold">02</span>
+                    <div>
+                        <p class="font-medium">Finanzia i pilastri</p>
+                        <p class="text-muted-foreground text-xs mt-1">In ordine: Liquidit&agrave; &rarr; Emergenza &rarr; Tasse &rarr; Investimenti</p>
+                    </div>
                 </div>
+                <div class="flex gap-3">
+                    <span class="text-accent font-mono font-bold">03</span>
+                    <div>
+                        <p class="font-medium">Monitora il cash flow</p>
+                        <p class="text-muted-foreground text-xs mt-1">Controlla la proiezione per i prossimi mesi</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <span class="text-accent font-mono font-bold">04</span>
+                    <div>
+                        <p class="font-medium">Rispetta le scadenze</p>
+                        <p class="text-muted-foreground text-xs mt-1">Paga tasse e acconti entro le date indicate</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </details>
 
-                <div class="progress-bar h-2 mt-3">
-                    <div class="progress-fill {% if pillar.completion_percentage >= 100 %}bg-accent{% elif pillar.completion_percentage >= 50 %}bg-amber-500{% else %}bg-red-400{% endif %}"
-                         style="width: {{ [pillar.completion_percentage, 100]|min }}%"></div>
-                </div>
-                <div class="flex justify-between text-xs text-muted-foreground">
-                    <span>{{ pillar.completion_percentage|round|int }}%</span>
-                    {% if pillar.shortfall > 0 %}
-                    <span class="text-red-400">-{{ pillar.shortfall|currency }} &euro;</span>
-                    {% elif pillar.surplus > 0 %}
-                    <span class="text-accent">+{{ pillar.surplus|currency }} &euro;</span>
+    <!-- 4 Pillars Section -->
+    <section class="animate-slide-up delay-2">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-muted-foreground uppercase tracking-wider">I 4 Pilastri</h2>
+            <div class="flex items-center gap-2 text-sm">
+                <span class="text-muted-foreground">Completamento:</span>
+                <span class="font-mono font-bold text-lg {% if overall_completion >= 100 %}text-accent{% elif overall_completion >= 50 %}text-amber-400{% else %}text-red-400{% endif %}">
+                    {{ overall_completion|round|int }}%
+                </span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {% for pillar in pillars %}
+            <div class="pillar-card card p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-glow-sm"
+                 style="--pillar-color: {% if pillar.number == 1 %}#3B82F6{% elif pillar.number == 2 %}#10B981{% elif pillar.number == 3 %}#F59E0B{% else %}#8B5CF6{% endif %}">
+
+                <div class="flex items-start justify-between mb-4">
+                    <div class="pillar-number" style="--pillar-color: {% if pillar.number == 1 %}#3B82F6{% elif pillar.number == 2 %}#10B981{% elif pillar.number == 3 %}#F59E0B{% else %}#8B5CF6{% endif %}">
+                        {{ pillar.number }}
+                    </div>
+                    {% if pillar.is_funded %}
+                    <span class="px-2 py-1 text-xs font-medium bg-accent/20 text-accent rounded-full">
+                        &#10003; Completo
+                    </span>
                     {% endif %}
                 </div>
-            </div>
 
-            <div class="mt-3 pt-3 border-t border-white/5 text-xs text-muted-foreground">
-                <p>{{ pillar.instrument }}</p>
-                <p class="text-accent/70">{{ pillar.account_name }}</p>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
+                <h3 class="font-display font-semibold text-lg mb-3">{{ pillar.display_name }}</h3>
 
-    <!-- Summary Bar -->
-    <div class="card p-4">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center gap-6">
-                <div>
-                    <p class="text-xs text-muted-foreground">Totale Allocato</p>
-                    <p class="text-xl font-bold">{{ total_balance|currency }} &euro;</p>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-xs text-muted-foreground uppercase tracking-wider">Saldo</span>
+                        <span class="font-mono text-xl font-semibold">{{ pillar.current_balance|currency }}<span class="text-sm ml-1 text-muted-foreground">&euro;</span></span>
+                    </div>
+                    <div class="flex justify-between items-baseline">
+                        <span class="text-xs text-muted-foreground uppercase tracking-wider">Target</span>
+                        <span class="font-mono text-sm text-muted-foreground">{{ pillar.target_balance|currency }} &euro;</span>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="relative h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div class="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                             style="width: {{ [pillar.completion_percentage, 100]|min }}%;
+                                    background: {% if pillar.completion_percentage >= 100 %}linear-gradient(90deg, #10B981, #34D399){% elif pillar.completion_percentage >= 50 %}linear-gradient(90deg, #F59E0B, #FBBF24){% else %}linear-gradient(90deg, #EF4444, #F87171){% endif %};"></div>
+                    </div>
+
+                    <div class="flex justify-between text-xs">
+                        <span class="font-mono">{{ pillar.completion_percentage|round|int }}%</span>
+                        {% if pillar.shortfall > 0 %}
+                        <span class="text-red-400 font-mono">-{{ pillar.shortfall|currency }} &euro;</span>
+                        {% elif pillar.surplus > 0 %}
+                        <span class="text-accent font-mono">+{{ pillar.surplus|currency }} &euro;</span>
+                        {% endif %}
+                    </div>
                 </div>
+
+                <div class="mt-4 pt-3 border-t border-white/5 text-xs text-muted-foreground">
+                    <p class="flex items-center gap-2">
+                        <span>&#127974;</span>
+                        {{ pillar.instrument }}
+                    </p>
+                    <p class="text-accent/70 mt-1">{{ pillar.account_name }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Total summary bar -->
+        <div class="mt-4 card p-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-8">
                 <div>
-                    <p class="text-xs text-muted-foreground">Target Totale</p>
-                    <p class="text-xl font-bold text-muted-foreground">{{ total_target|currency }} &euro;</p>
+                    <p class="text-xs text-muted-foreground uppercase tracking-wider">Totale allocato</p>
+                    <p class="font-mono text-2xl font-bold">{{ total_balance|currency }} <span class="text-base text-muted-foreground">&euro;</span></p>
+                </div>
+                <div class="hidden sm:block h-8 w-px bg-white/10"></div>
+                <div class="hidden sm:block">
+                    <p class="text-xs text-muted-foreground uppercase tracking-wider">Target totale</p>
+                    <p class="font-mono text-lg text-muted-foreground">{{ total_target|currency }} &euro;</p>
                 </div>
             </div>
             <div class="flex items-center gap-4">
-                <div class="progress-bar w-32 h-3">
-                    <div class="progress-fill bg-accent" style="width: {{ [overall_completion, 100]|min }}%"></div>
+                <div class="w-32 h-3 bg-white/5 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-accent to-amber-400 rounded-full transition-all duration-500"
+                         style="width: {{ [overall_completion, 100]|min }}%"></div>
                 </div>
-                <span class="text-lg font-bold">{{ overall_completion|round|int }}%</span>
+                <span class="font-mono text-xl font-bold">{{ overall_completion|round|int }}%</span>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Cash Flow Projection -->
-    <div class="card p-6">
-        <h2 class="text-xl font-semibold mb-4">Proiezione Liquidit&agrave; (6 mesi)</h2>
-
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="text-xs text-muted-foreground uppercase tracking-wider">
-                        <th class="text-left py-3 px-2">Mese</th>
-                        <th class="text-right py-3 px-2">Apertura</th>
-                        <th class="text-right py-3 px-2">Entrate</th>
-                        <th class="text-right py-3 px-2">Uscite</th>
-                        <th class="text-right py-3 px-2">Chiusura</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-white/5">
-                    {% for p in projections %}
-                    <tr class="hover:bg-white/[0.02] transition-colors">
-                        <td class="py-3 px-2 font-medium">{{ p.month_name }} {{ p.year }}</td>
-                        <td class="py-3 px-2 text-right text-muted-foreground">{{ p.opening|currency }} &euro;</td>
-                        <td class="py-3 px-2 text-right text-accent">+{{ p.income|currency }} &euro;</td>
-                        <td class="py-3 px-2 text-right text-red-400">-{{ p.costs|currency }} &euro;</td>
-                        <td class="py-3 px-2 text-right font-bold {% if p.closing < 0 %}text-red-400{% endif %}">{{ p.closing|currency }} &euro;</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Cash Flow Timeline (Horizontal) -->
+    <section class="animate-slide-up delay-3">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-muted-foreground uppercase tracking-wider">Proiezione Cash Flow</h2>
+            <span class="text-xs text-muted-foreground">Prossimi 6 mesi &rarr;</span>
         </div>
-    </div>
+
+        <div class="card p-6">
+            <!-- Legend -->
+            <div class="flex flex-wrap gap-4 mb-6 text-xs">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-white/20"></div>
+                    <span class="text-muted-foreground">Apertura</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-emerald-400"></div>
+                    <span class="text-muted-foreground">Entrate</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                    <span class="text-muted-foreground">Uscite</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-accent"></div>
+                    <span class="text-muted-foreground">Chiusura</span>
+                </div>
+            </div>
+
+            <!-- Horizontal scrolling timeline -->
+            <div class="timeline-scroll overflow-x-auto pb-4 -mx-2 px-2">
+                <div class="flex gap-0 min-w-max">
+                    {% for p in projections %}
+                    <div class="timeline-month flex-shrink-0 px-4 py-3 {% if loop.first %}rounded-l-lg{% endif %} {% if loop.last %}rounded-r-lg{% endif %} hover:bg-white/[0.02] transition-colors">
+                        <!-- Month header -->
+                        <div class="text-center mb-4">
+                            <p class="font-display font-semibold">{{ p.month_name }}</p>
+                            <p class="text-xs text-muted-foreground font-mono">{{ p.year }}</p>
+                        </div>
+
+                        <!-- Values stack -->
+                        <div class="space-y-3 text-center">
+                            <div>
+                                <p class="text-xs text-muted-foreground mb-1">Apertura</p>
+                                <p class="font-mono text-sm text-white/60">{{ p.opening|currency }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-muted-foreground mb-1">Entrate</p>
+                                <p class="font-mono text-sm flow-positive">+{{ p.income|currency }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-muted-foreground mb-1">Uscite</p>
+                                <p class="font-mono text-sm flow-negative">-{{ p.costs|currency }}</p>
+                            </div>
+                            <div class="pt-3 border-t border-white/10">
+                                <p class="text-xs text-muted-foreground mb-1">Chiusura</p>
+                                <p class="font-mono text-lg font-bold {% if p.closing < 0 %}text-red-400{% else %}text-accent{% endif %}">
+                                    {{ p.closing|currency }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <p class="text-xs text-muted-foreground mt-4 text-center">
+                &#8592; Scorri per vedere tutti i mesi &#8594;
+            </p>
+        </div>
+    </section>
 
     <!-- Tax Deadlines -->
     {% if deadlines %}
-    <div class="card p-6">
-        <h2 class="text-xl font-semibold mb-4">Prossime Scadenze Fiscali</h2>
+    <section class="animate-slide-up delay-4">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-muted-foreground uppercase tracking-wider">Scadenze Fiscali</h2>
+            <a href="/api/v2/taxes/deadlines/2026" class="text-xs text-accent hover:underline">Vedi tutte &rarr;</a>
+        </div>
 
-        <div class="space-y-3">
+        <div class="grid gap-3">
             {% for d in deadlines %}
-            <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg {% if d.days_remaining <= 7 %}border border-red-500/30{% endif %}">
+            <div class="card p-4 flex items-center justify-between {% if d.days_remaining <= 7 %}border-red-500/30{% endif %}">
                 <div class="flex items-center gap-4">
-                    <div class="text-center w-14">
-                        <p class="text-2xl font-bold {% if d.days_remaining <= 7 %}text-red-400{% elif d.days_remaining <= 30 %}text-amber-400{% else %}text-muted-foreground{% endif %}">
+                    <!-- Countdown badge -->
+                    <div class="countdown-badge w-16 h-16 rounded-xl flex flex-col items-center justify-center
+                                {% if d.days_remaining <= 7 %}bg-red-500/20 countdown-urgent{% elif d.days_remaining <= 30 %}bg-amber-500/20{% else %}bg-white/5{% endif %}">
+                        <span class="font-mono text-2xl font-bold {% if d.days_remaining <= 7 %}text-red-400{% elif d.days_remaining <= 30 %}text-amber-400{% else %}text-white{% endif %}">
                             {{ d.days_remaining }}
-                        </p>
-                        <p class="text-xs text-muted-foreground">giorni</p>
+                        </span>
+                        <span class="text-xs text-muted-foreground">giorni</span>
                     </div>
+
                     <div>
-                        <p class="font-medium">{{ d.name }}</p>
-                        <p class="text-sm text-muted-foreground">{{ d.due_date.strftime('%d/%m/%Y') }}</p>
+                        <p class="font-semibold">{{ d.name }}</p>
+                        <p class="text-sm text-muted-foreground">
+                            Scadenza: <span class="font-mono">{{ d.due_date.strftime('%d/%m/%Y') }}</span>
+                        </p>
                     </div>
                 </div>
+
                 <div class="text-right">
-                    <p class="text-lg font-bold">{{ d.remaining|currency }} &euro;</p>
+                    <p class="font-mono text-xl font-bold">{{ d.remaining|currency }} <span class="text-sm text-muted-foreground">&euro;</span></p>
                     {% if d.amount_paid > 0 %}
-                    <p class="text-xs text-accent">{{ d.amount_paid|currency }} &euro; pagati</p>
+                    <p class="text-xs text-accent">{{ d.amount_paid|currency }} &euro; gi&agrave; pagati</p>
                     {% endif %}
                 </div>
             </div>
             {% endfor %}
         </div>
-    </div>
+    </section>
     {% endif %}
 
-    <!-- Quick Actions -->
-    <div class="flex flex-wrap gap-3 justify-center">
-        <a href="/api/v2/pillars/allocation-suggestions?amount=1000"
-           class="btn-secondary px-4 py-2 text-sm rounded-lg">
-            Suggerisci Allocazione
-        </a>
-        <a href="/" class="btn-secondary px-4 py-2 text-sm rounded-lg">
-            Dashboard v1
-        </a>
-    </div>
+    <!-- Actions -->
+    <section class="animate-fade-in delay-5">
+        <div class="flex flex-wrap gap-3 justify-center pt-4">
+            <button onclick="document.querySelector('details').open = true; document.querySelector('details').scrollIntoView({behavior: 'smooth'})"
+                    class="btn-secondary px-5 py-2.5 text-sm flex items-center gap-2">
+                <span>&#128218;</span> Guida
+            </button>
+            <a href="/setup?step=1" class="btn-primary px-5 py-2.5 text-sm flex items-center gap-2">
+                <span>&#9881;</span> Configura Budget
+            </a>
+            <a href="/" class="btn-secondary px-5 py-2.5 text-sm">
+                Dashboard v1
+            </a>
+        </div>
+    </section>
 </div>
 {% endblock %}
