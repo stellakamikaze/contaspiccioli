@@ -603,6 +603,7 @@ async def cashflow_v2(request: Request, year: Optional[int] = None, db: Session 
         "year": year,
         "months": data["months"],
         "sections": data["sections"],
+        "budget": data["budget"],
         "opening_balance": data["opening_balance"],
         "current_month": today.month,
     })

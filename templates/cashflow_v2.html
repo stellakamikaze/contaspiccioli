@@ -229,11 +229,58 @@
         </div>
     </header>
 
+    <!-- Budget Breakdown Card -->
+    <div class="card p-4 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-6">
+                <div>
+                    <p class="text-xs text-muted-foreground uppercase tracking-wider">Reddito</p>
+                    <p class="font-mono text-xl font-bold text-emerald-400">{{ "{:,.0f}".format(budget.gross_income) }} &euro;</p>
+                </div>
+                <div class="text-muted-foreground">&rarr;</div>
+                <div>
+                    <p class="text-xs text-muted-foreground uppercase tracking-wider">Tasse P3</p>
+                    <p class="font-mono text-lg text-red-400">-{{ "{:,.0f}".format(budget.tax_provision) }} <span class="text-xs">({{ budget.tax_rate_effective|round|int }}%)</span></p>
+                </div>
+                <div>
+                    <p class="text-xs text-muted-foreground uppercase tracking-wider">Invest P4</p>
+                    <p class="font-mono text-lg text-purple-400">-{{ "{:,.0f}".format(budget.investment_contribution) }} <span class="text-xs">({{ budget.investment_rate|round|int }}%)</span></p>
+                </div>
+                {% if budget.emergency_contribution > 0 %}
+                <div>
+                    <p class="text-xs text-muted-foreground uppercase tracking-wider">Emerg P2</p>
+                    <p class="font-mono text-lg text-indigo-400">-{{ "{:,.0f}".format(budget.emergency_contribution) }} <span class="text-xs">({{ budget.emergency_rate|round|int }}%)</span></p>
+                </div>
+                {% endif %}
+                <div class="text-muted-foreground">=</div>
+                <div>
+                    <p class="text-xs text-muted-foreground uppercase tracking-wider">Disponibile P1</p>
+                    <p class="font-mono text-xl font-bold text-accent">{{ "{:,.0f}".format(budget.available_for_p1) }} &euro;</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4 border-l border-white/10 pl-6">
+                <div>
+                    <p class="text-xs text-muted-foreground uppercase tracking-wider">Costi Fissi</p>
+                    <p class="font-mono text-lg">{{ "{:,.0f}".format(budget.fixed_costs) }} &euro;</p>
+                </div>
+                <div class="text-muted-foreground">&rarr;</div>
+                <div>
+                    <p class="text-xs text-accent uppercase tracking-wider font-semibold">Budget Variabile</p>
+                    <p class="font-mono text-xl font-bold {% if budget.variable_budget > 0 %}text-emerald-400{% else %}text-red-400{% endif %}">{{ "{:,.0f}".format(budget.variable_budget) }} &euro;/mese</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Legend -->
     <div class="legend">
         <div class="legend-item">
             <div class="legend-dot bg-emerald-400"></div>
             <span>Entrate</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot bg-purple-400"></div>
+            <span>Allocazioni</span>
         </div>
         <div class="legend-item">
             <div class="legend-dot bg-indigo-400"></div>
@@ -242,14 +289,6 @@
         <div class="legend-item">
             <div class="legend-dot bg-amber-400"></div>
             <span>Costi Variabili</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-dot bg-white/30"></div>
-            <span>Previsto</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-dot bg-white"></div>
-            <span>Effettivo</span>
         </div>
     </div>
 
@@ -310,6 +349,35 @@
                         </td>
                     </tr>
 
+                    <!-- ALLOCAZIONI Section (how income is distributed to pillars) -->
+                    <tr class="section-header" data-section="allocazioni" onclick="toggleSection('allocazioni')">
+                        <td colspan="{{ months|length + 2 }}">
+                            <div class="section-name">
+                                <svg class="w-4 h-4 chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                                <span class="text-purple-400">{{ sections.allocazioni.icon }}</span>
+                                <span>ALLOCAZIONI PILASTRI</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% for row in sections.allocazioni.rows %}
+                    <tr class="category-row {% if row.is_total %}totals-row{% endif %}" data-section="allocazioni">
+                        <td>
+                            <div class="category-name">
+                                <span class="category-icon">{{ row.icon }}</span>
+                                <span>{{ row.name }}</span>
+                            </div>
+                        </td>
+                        {% for m in months %}
+                        <td class="{% if m.number == current_month %}current-month{% endif %} {% if '→' in row.name %}cell-negative{% elif row.is_total %}cell-positive{% else %}{% endif %}">
+                            {{ "{:,.0f}".format(row.monthly[m.number].expected) }}
+                        </td>
+                        {% endfor %}
+                        <td class="cell-highlight {% if row.is_total %}cell-positive{% endif %}">{{ "{:,.0f}".format(row.yearly_total) }}</td>
+                    </tr>
+                    {% endfor %}
+
                     <!-- COSTI FISSI Section -->
                     <tr class="section-header" data-section="costi_fissi" onclick="toggleSection('costi_fissi')">
                         <td colspan="{{ months|length + 2 }}">
@@ -360,6 +428,9 @@
                                 </svg>
                                 <span class="text-amber-400">{{ sections.costi_variabili.icon }}</span>
                                 <span>COSTI VARIABILI</span>
+                                <span class="ml-4 text-xs px-2 py-1 rounded-full {% if budget.variable_budget > 0 %}bg-emerald-500/20 text-emerald-400{% else %}bg-red-500/20 text-red-400{% endif %}">
+                                    Budget: {{ "{:,.0f}".format(budget.variable_budget) }} &euro;/mese
+                                </span>
                             </div>
                         </td>
                     </tr>

@@ -799,11 +799,13 @@ def get_cashflow_spreadsheet(
     Get cash flow data in spreadsheet format (Sibill-style).
 
     Returns:
-    - sections: RICAVI, COSTI_FISSI, COSTI_VARIABILI, TOTALI
+    - sections: RICAVI, ALLOCAZIONI, COSTI_FISSI, COSTI_VARIABILI, TOTALI
     - Each section has categories with 12 monthly values
     - Months as columns, categories as rows
+    - Budget variabile calculated automatically from allocations
     """
     from app.services.forecast_v2 import MONTH_NAMES
+    from app.services.pillars_v2 import calculate_monthly_budget
 
     if not year:
         year = date.today().year
@@ -833,6 +835,9 @@ def get_cashflow_spreadsheet(
     # Get user settings for defaults
     settings = db.query(UserSettings).first()
     default_income = settings.monthly_income if settings else Decimal("3500.00")
+
+    # Calculate monthly budget breakdown (allocations)
+    budget = calculate_monthly_budget(db)
 
     def build_category_row(cat: Category, is_income: bool = False):
         """Build monthly values for a category."""
@@ -891,6 +896,53 @@ def get_cashflow_spreadsheet(
         "icon": "🛒",
         "color": "#F59E0B",
         "categories": [build_category_row(cat) for cat in variable_cats],
+        "monthly_totals": {},
+        "budget_available": float(budget.variable_budget),  # Calculated budget
+    }
+
+    # Build ALLOCAZIONI section (how income is distributed to pillars)
+    allocazioni = {
+        "name": "ALLOCAZIONI",
+        "icon": "📊",
+        "color": "#8B5CF6",
+        "rows": [
+            {
+                "name": "Reddito Lordo",
+                "icon": "💰",
+                "color": "#10B981",
+                "monthly": {m: {"expected": float(budget.gross_income), "actual": 0} for m in range(1, 13)},
+                "yearly_total": float(budget.gross_income * 12),
+            },
+            {
+                "name": f"→ Tasse P3 ({budget.tax_rate_effective:.0f}%)",
+                "icon": "🏛️",
+                "color": "#EF4444",
+                "monthly": {m: {"expected": float(budget.tax_provision), "actual": 0} for m in range(1, 13)},
+                "yearly_total": float(budget.tax_provision * 12),
+            },
+            {
+                "name": f"→ Emergenza P2 ({budget.emergency_rate:.0f}%)",
+                "icon": "🛡️",
+                "color": "#6366F1",
+                "monthly": {m: {"expected": float(budget.emergency_contribution), "actual": 0} for m in range(1, 13)},
+                "yearly_total": float(budget.emergency_contribution * 12),
+            },
+            {
+                "name": f"→ Investimenti P4 ({budget.investment_rate:.0f}%)",
+                "icon": "📈",
+                "color": "#8B5CF6",
+                "monthly": {m: {"expected": float(budget.investment_contribution), "actual": 0} for m in range(1, 13)},
+                "yearly_total": float(budget.investment_contribution * 12),
+            },
+            {
+                "name": "= Disponibile P1",
+                "icon": "💳",
+                "color": "#F59E0B",
+                "monthly": {m: {"expected": float(budget.available_for_p1), "actual": 0} for m in range(1, 13)},
+                "yearly_total": float(budget.available_for_p1 * 12),
+                "is_total": True,
+            },
+        ],
         "monthly_totals": {},
     }
 
@@ -953,9 +1005,22 @@ def get_cashflow_spreadsheet(
         "months": months,
         "sections": {
             "ricavi": ricavi,
+            "allocazioni": allocazioni,
             "costi_fissi": costi_fissi,
             "costi_variabili": costi_variabili,
             "totali": totali,
+        },
+        "budget": {
+            "gross_income": float(budget.gross_income),
+            "tax_provision": float(budget.tax_provision),
+            "tax_rate_effective": float(budget.tax_rate_effective),
+            "emergency_contribution": float(budget.emergency_contribution),
+            "emergency_rate": float(budget.emergency_rate),
+            "investment_contribution": float(budget.investment_contribution),
+            "investment_rate": float(budget.investment_rate),
+            "available_for_p1": float(budget.available_for_p1),
+            "fixed_costs": float(budget.fixed_costs),
+            "variable_budget": float(budget.variable_budget),
         },
         "opening_balance": float(opening_balance),
     }

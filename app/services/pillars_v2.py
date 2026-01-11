@@ -301,3 +301,92 @@ def get_pillar_summary(db: Session) -> dict:
         'overall_completion': overall_completion,
         'all_funded': all(s.is_funded for s in statuses),
     }
+
+
+@dataclass
+class MonthlyBudgetBreakdown:
+    """Monthly budget breakdown showing how income is allocated."""
+    gross_income: Decimal
+    # Allocations to pillars
+    tax_provision: Decimal          # P3 - Accantonamento tasse (~31%)
+    emergency_contribution: Decimal  # P2 - Fondo emergenza (se sotto target)
+    investment_contribution: Decimal # P4 - Investimenti
+    # Available for spending (P1)
+    available_for_p1: Decimal        # Liquidità totale
+    fixed_costs: Decimal             # Costi fissi
+    variable_budget: Decimal         # Budget disponibile per costi variabili
+    # Percentages
+    tax_rate_effective: Decimal
+    investment_rate: Decimal
+    emergency_rate: Decimal
+
+
+def calculate_monthly_budget(
+    db: Session,
+    investment_percentage: Decimal = Decimal("0.10"),  # 10% default
+    emergency_contribution_if_underfunded: Decimal = Decimal("0.05"),  # 5% extra if P2 underfunded
+) -> MonthlyBudgetBreakdown:
+    """
+    Calculate how monthly income should be allocated across pillars.
+
+    Priority order (Coletti method):
+    1. Tasse (obbligatorio ~31% del reddito) → P3
+    2. Fondo Emergenza (se sotto target) → P2
+    3. Investimenti (% configurabile) → P4
+    4. Spese quotidiane (resto) → P1 (fissi + variabili)
+    """
+    from app.models_v2 import Category, CategoryType
+    from app.services.taxes_v2 import get_or_create_tax_settings, calculate_annual_taxes
+
+    # Get user settings
+    settings = db.query(UserSettings).first()
+    if not settings:
+        gross_income = Decimal("3500.00")
+    else:
+        gross_income = settings.monthly_income
+
+    # 1. Calculate tax provision (INPS + IRPEF)
+    year = date.today().year
+    tax_settings = get_or_create_tax_settings(db, year)
+    annual_taxes = calculate_annual_taxes(gross_income * 12, tax_settings)
+    tax_provision = annual_taxes.monthly_provision
+    tax_rate_effective = (tax_provision / gross_income * 100) if gross_income > 0 else Decimal("0")
+
+    # 2. Check if P2 (Emergency) is underfunded
+    p2 = db.query(Pillar).filter(Pillar.number == 2).first()
+    emergency_contribution = Decimal("0.00")
+    emergency_rate = Decimal("0.00")
+    if p2 and not p2.is_funded:
+        # Add extra contribution until funded
+        emergency_contribution = gross_income * emergency_contribution_if_underfunded
+        emergency_rate = emergency_contribution_if_underfunded * 100
+
+    # 3. Investment contribution
+    investment_contribution = gross_income * investment_percentage
+    investment_rate = investment_percentage * 100
+
+    # 4. Calculate what's left for P1 (daily expenses)
+    available_for_p1 = gross_income - tax_provision - emergency_contribution - investment_contribution
+
+    # 5. Calculate fixed costs from category budgets
+    fixed_categories = db.query(Category).filter(
+        Category.type == CategoryType.FIXED,
+        Category.is_active == True
+    ).all()
+    fixed_costs = sum(cat.monthly_budget for cat in fixed_categories if cat.monthly_budget)
+
+    # 6. Variable budget is what remains after fixed costs
+    variable_budget = available_for_p1 - fixed_costs
+
+    return MonthlyBudgetBreakdown(
+        gross_income=gross_income,
+        tax_provision=tax_provision,
+        emergency_contribution=emergency_contribution,
+        investment_contribution=investment_contribution,
+        available_for_p1=available_for_p1,
+        fixed_costs=fixed_costs,
+        variable_budget=variable_budget,
+        tax_rate_effective=tax_rate_effective,
+        investment_rate=investment_rate,
+        emergency_rate=emergency_rate,
+    )
