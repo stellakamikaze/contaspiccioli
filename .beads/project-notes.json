@@ -1,0 +1,47 @@
+{
+  "state_of_art": {
+    "content": "# Contaspiccioli - Stato dell'Arte\n\n## Cos'è Contaspiccioli\nGestore di finanza personale per freelancer italiani con P.IVA forfettaria. Implementa il modello dei 4 pilastri finanziari.\n\n## Stack Tecnologico\n- **Backend:** FastAPI + SQLAlchemy + SQLite\n- **Frontend:** Jinja2 + HTMX + TailwindCSS\n- **Container:** Docker + Colima\n- **Porta:** 8001\n\n## Modello Budget (4 Pilastri)\nBasato su reddito 3.500€/mese:\n\n| Pilastro | % | €/mese |\n|----------|---|--------|\n| Spese fisse | 33.37% | 1.168 |\n| Spese variabili | 25.46% | 891 |\n| XEON tasse | 31.43% | 1.100 |\n| ETF investimenti | 9.74% | 341 |\n\n## Funzionalità Implementate\n- Tracking transazioni (entrate/uscite)\n- Categorie spese (fisse/variabili)\n- Gestione 4 pilastri con riconciliazione\n- Scadenze fiscali\n- Summary mensile e forecast annuale\n- Notifiche Telegram\n\n## File Correlati\n- `Contaspiccioli_2026.xlsx` - Versione Excel per Google Sheets\n- `La guida di Contaspiccioli.md` - Documentazione originale",
+    "updated_at": "2026-01-05T18:30:00Z"
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "question": "Qual è la prossima feature prioritaria?",
+      "answer": "Dashboard grafica con andamento mensile dei pilastri e alert scadenze fiscali.",
+      "category": "roadmap",
+      "created_at": "2026-01-05T18:30:00Z",
+      "answered_at": "2026-01-05T18:30:00Z"
+    },
+    {
+      "id": "q2",
+      "question": "Come gestire la riconciliazione bancaria?",
+      "answer": "API /api/pillars/{id}/reconcile per aggiornare il saldo effettivo vs saldo teorico. Preferito approccio manuale vs import CSV.",
+      "category": "architecture",
+      "created_at": "2026-01-05T18:30:00Z",
+      "answered_at": "2026-01-05T18:30:00Z"
+    },
+    {
+      "id": "q3",
+      "question": "Ci sono bug noti da risolvere?",
+      "answer": "Nessun bug critico noto. Verificare calcolo forecast con mesi incompleti.",
+      "category": "bugs",
+      "created_at": "2026-01-05T18:30:00Z",
+      "answered_at": "2026-01-05T18:30:00Z"
+    },
+    {
+      "id": "q4",
+      "question": "L'UI deve essere in italiano?",
+      "answer": "Sì, tutta l'interfaccia e le comunicazioni devono essere in italiano.",
+      "category": "design",
+      "created_at": "2026-01-05T18:30:00Z",
+      "answered_at": "2026-01-05T18:30:00Z"
+    }
+  ],
+  "question_templates": [
+    {"id": "t1", "question": "Qual è la prossima feature da implementare?", "category": "roadmap"},
+    {"id": "t2", "question": "Ci sono bug noti da risolvere?", "category": "bugs"},
+    {"id": "t3", "question": "Quali decisioni architetturali sono in sospeso?", "category": "architecture"},
+    {"id": "t4", "question": "Come vuoi gestire [specifico aspetto]?", "category": "design"},
+    {"id": "t5", "question": "Quali test mancano?", "category": "testing"}
+  ]
+}

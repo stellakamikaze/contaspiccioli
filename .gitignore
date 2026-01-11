@@ -27,3 +27,6 @@ data/*.db-*
 Bilancio*.xlsx
 Budget_*.xlsx
 Estratto*.pdf
+
+# Backups
+backups/
