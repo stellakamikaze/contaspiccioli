@@ -10,7 +10,8 @@ from sqlalchemy import extract
 from app.database import get_db
 from app.models_v2 import (
     Account, Pillar, Category, Transaction, TaxSettings, TaxDeadline,
-    PlannedExpense, ForecastMonth, UserSettings, TransactionSource
+    PlannedExpense, ForecastMonth, ForecastLine, UserSettings, TransactionSource,
+    CategoryType
 )
 from app.schemas_v2 import (
     # Accounts
@@ -785,6 +786,179 @@ def delete_planned_expense(expense_id: int, db: Session = Depends(get_db)):
     db.delete(expense)
     db.commit()
     return {"status": "deleted", "id": expense_id}
+
+
+# ==================== CASH FLOW SPREADSHEET ====================
+
+@router.get("/cashflow/spreadsheet")
+def get_cashflow_spreadsheet(
+    year: int = Query(default=None),
+    db: Session = Depends(get_db)
+):
+    """
+    Get cash flow data in spreadsheet format (Sibill-style).
+
+    Returns:
+    - sections: RICAVI, COSTI_FISSI, COSTI_VARIABILI, TOTALI
+    - Each section has categories with 12 monthly values
+    - Months as columns, categories as rows
+    """
+    from app.services.forecast_v2 import MONTH_NAMES
+
+    if not year:
+        year = date.today().year
+
+    # Get all categories
+    income_cats = db.query(Category).filter(
+        Category.type == CategoryType.INCOME,
+        Category.is_active == True
+    ).order_by(Category.display_order).all()
+
+    fixed_cats = db.query(Category).filter(
+        Category.type == CategoryType.FIXED,
+        Category.is_active == True
+    ).order_by(Category.display_order).all()
+
+    variable_cats = db.query(Category).filter(
+        Category.type == CategoryType.VARIABLE,
+        Category.is_active == True
+    ).order_by(Category.display_order).all()
+
+    # Get all forecasts for the year
+    forecasts = db.query(ForecastMonth).filter(
+        ForecastMonth.year == year
+    ).order_by(ForecastMonth.month).all()
+    forecast_by_month = {f.month: f for f in forecasts}
+
+    # Get user settings for defaults
+    settings = db.query(UserSettings).first()
+    default_income = settings.monthly_income if settings else Decimal("3500.00")
+
+    def build_category_row(cat: Category, is_income: bool = False):
+        """Build monthly values for a category."""
+        monthly = {}
+        yearly_total = Decimal("0.00")
+
+        for month in range(1, 13):
+            expected = cat.monthly_budget if cat.monthly_budget else Decimal("0.00")
+            actual = Decimal("0.00")
+
+            forecast = forecast_by_month.get(month)
+            if forecast:
+                # Get ForecastLine for this category
+                line = db.query(ForecastLine).filter(
+                    ForecastLine.forecast_month_id == forecast.id,
+                    ForecastLine.category_id == cat.id
+                ).first()
+                if line:
+                    expected = line.expected_amount
+                    actual = line.actual_amount
+
+            monthly[month] = {
+                "expected": float(expected),
+                "actual": float(actual),
+            }
+            yearly_total += expected
+
+        return {
+            "id": cat.id,
+            "name": cat.name,
+            "icon": cat.icon or "📦",
+            "color": cat.color or "#6B7280",
+            "monthly": monthly,
+            "yearly_total": float(yearly_total),
+        }
+
+    # Build sections
+    ricavi = {
+        "name": "RICAVI",
+        "icon": "💰",
+        "color": "#10B981",
+        "categories": [build_category_row(cat, is_income=True) for cat in income_cats],
+        "monthly_totals": {},
+    }
+
+    costi_fissi = {
+        "name": "COSTI FISSI",
+        "icon": "🏠",
+        "color": "#6366F1",
+        "categories": [build_category_row(cat) for cat in fixed_cats],
+        "monthly_totals": {},
+    }
+
+    costi_variabili = {
+        "name": "COSTI VARIABILI",
+        "icon": "🛒",
+        "color": "#F59E0B",
+        "categories": [build_category_row(cat) for cat in variable_cats],
+        "monthly_totals": {},
+    }
+
+    # Calculate section totals per month
+    for section in [ricavi, costi_fissi, costi_variabili]:
+        for month in range(1, 13):
+            exp_total = sum(c["monthly"][month]["expected"] for c in section["categories"])
+            act_total = sum(c["monthly"][month]["actual"] for c in section["categories"])
+            section["monthly_totals"][month] = {
+                "expected": exp_total,
+                "actual": act_total,
+            }
+
+    # Calculate TOTALI (balance per month)
+    totali = {
+        "name": "TOTALI",
+        "rows": [],
+        "monthly_totals": {},
+    }
+
+    # Running balance calculation
+    p1 = db.query(Pillar).filter(Pillar.number == 1).first()
+    opening_balance = p1.current_balance if p1 else Decimal("0.00")
+    running_balance = float(opening_balance)
+
+    ricavi_row = {"name": "Totale Ricavi", "icon": "💰", "color": "#10B981", "monthly": {}}
+    costi_row = {"name": "Totale Costi", "icon": "📉", "color": "#EF4444", "monthly": {}}
+    saldo_row = {"name": "Saldo Finale", "icon": "💳", "color": "#F59E0B", "monthly": {}}
+
+    for month in range(1, 13):
+        income_exp = ricavi["monthly_totals"][month]["expected"]
+        income_act = ricavi["monthly_totals"][month]["actual"]
+
+        costs_exp = (
+            costi_fissi["monthly_totals"][month]["expected"] +
+            costi_variabili["monthly_totals"][month]["expected"]
+        )
+        costs_act = (
+            costi_fissi["monthly_totals"][month]["actual"] +
+            costi_variabili["monthly_totals"][month]["actual"]
+        )
+
+        # Running balance based on expected
+        balance_exp = running_balance + income_exp - costs_exp
+        balance_act = running_balance + income_act - costs_act if income_act > 0 or costs_act > 0 else None
+
+        ricavi_row["monthly"][month] = {"expected": income_exp, "actual": income_act}
+        costi_row["monthly"][month] = {"expected": costs_exp, "actual": costs_act}
+        saldo_row["monthly"][month] = {"expected": balance_exp, "actual": balance_act}
+
+        running_balance = balance_exp
+
+    totali["rows"] = [ricavi_row, costi_row, saldo_row]
+
+    # Month names
+    months = [{"number": m, "name": MONTH_NAMES[m][:3], "full_name": MONTH_NAMES[m]} for m in range(1, 13)]
+
+    return {
+        "year": year,
+        "months": months,
+        "sections": {
+            "ricavi": ricavi,
+            "costi_fissi": costi_fissi,
+            "costi_variabili": costi_variabili,
+            "totali": totali,
+        },
+        "opening_balance": float(opening_balance),
+    }
 
 
 # ==================== USER SETTINGS ====================

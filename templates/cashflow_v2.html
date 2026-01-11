@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+
+{% block title %}Cash Flow {{ year }} - Contaspiccioli{% endblock %}
+
+{% block content %}
+<style>
+    /* Spreadsheet styles */
+    .spreadsheet {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+    }
+
+    .spreadsheet-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .spreadsheet table {
+        border-collapse: collapse;
+        min-width: 100%;
+    }
+
+    .spreadsheet th,
+    .spreadsheet td {
+        padding: 8px 12px;
+        text-align: right;
+        white-space: nowrap;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .spreadsheet th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.05em;
+        color: #71717A;
+        background: rgba(26, 26, 36, 0.8);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .spreadsheet td:first-child,
+    .spreadsheet th:first-child {
+        text-align: left;
+        position: sticky;
+        left: 0;
+        background: rgba(26, 26, 36, 0.95);
+        z-index: 5;
+        min-width: 180px;
+    }
+
+    .spreadsheet th:first-child {
+        z-index: 15;
+    }
+
+    /* Section headers */
+    .section-header {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .section-header:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .section-header td {
+        padding: 12px;
+        font-weight: 600;
+        font-size: 13px;
+        background: rgba(26, 26, 36, 0.6);
+    }
+
+    .section-header .section-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .section-header .chevron {
+        transition: transform 0.2s ease;
+    }
+
+    .section-header.collapsed .chevron {
+        transform: rotate(-90deg);
+    }
+
+    /* Category rows */
+    .category-row {
+        transition: all 0.2s ease;
+    }
+
+    .category-row:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .category-row.hidden {
+        display: none;
+    }
+
+    .category-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-left: 24px;
+    }
+
+    .category-icon {
+        font-size: 14px;
+    }
+
+    /* Value cells */
+    .cell-positive {
+        color: #34D399;
+    }
+
+    .cell-negative {
+        color: #F87171;
+    }
+
+    .cell-neutral {
+        color: #9CA3AF;
+    }
+
+    .cell-highlight {
+        background: rgba(245, 158, 11, 0.1);
+        font-weight: 600;
+    }
+
+    /* Totals section */
+    .totals-section td {
+        background: rgba(26, 26, 36, 0.9);
+        border-top: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .totals-row td {
+        font-weight: 600;
+    }
+
+    .saldo-row td {
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    /* Current month highlight */
+    .current-month {
+        background: rgba(245, 158, 11, 0.08);
+    }
+
+    .current-month-header {
+        color: #F59E0B !important;
+        background: rgba(245, 158, 11, 0.15) !important;
+    }
+
+    /* Year selector */
+    .year-nav {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .year-nav button {
+        padding: 8px 12px;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: #9CA3AF;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .year-nav button:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #FAFAFA;
+    }
+
+    /* Legend */
+    .legend {
+        display: flex;
+        gap: 24px;
+        font-size: 11px;
+        color: #71717A;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+        animation: fadeIn 0.3s ease-out forwards;
+    }
+</style>
+
+<div class="space-y-6">
+    <!-- Header -->
+    <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+            <h1 class="text-3xl lg:text-4xl font-display font-bold tracking-tight">
+                Cash Flow {{ year }}
+            </h1>
+            <p class="text-muted-foreground mt-1">
+                Previsionale annuale stile Sibill &mdash; mesi come colonne, categorie come righe
+            </p>
+        </div>
+
+        <div class="year-nav">
+            <a href="/v2/cashflow?year={{ year - 1 }}" class="btn-secondary px-3 py-2 text-sm">
+                &larr; {{ year - 1 }}
+            </a>
+            <span class="font-display text-2xl font-bold text-accent">{{ year }}</span>
+            <a href="/v2/cashflow?year={{ year + 1 }}" class="btn-secondary px-3 py-2 text-sm">
+                {{ year + 1 }} &rarr;
+            </a>
+        </div>
+    </header>
+
+    <!-- Legend -->
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-dot bg-emerald-400"></div>
+            <span>Entrate</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot bg-indigo-400"></div>
+            <span>Costi Fissi</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot bg-amber-400"></div>
+            <span>Costi Variabili</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot bg-white/30"></div>
+            <span>Previsto</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot bg-white"></div>
+            <span>Effettivo</span>
+        </div>
+    </div>
+
+    <!-- Spreadsheet -->
+    <div class="card spreadsheet-container animate-in">
+        <div class="spreadsheet">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Categoria</th>
+                        {% for m in months %}
+                        <th class="{% if m.number == current_month %}current-month-header{% endif %}">
+                            {{ m.name }}
+                        </th>
+                        {% endfor %}
+                        <th>Totale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- RICAVI Section -->
+                    <tr class="section-header" data-section="ricavi" onclick="toggleSection('ricavi')">
+                        <td colspan="{{ months|length + 2 }}">
+                            <div class="section-name">
+                                <svg class="w-4 h-4 chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                                <span class="text-emerald-400">{{ sections.ricavi.icon }}</span>
+                                <span>RICAVI</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% for cat in sections.ricavi.categories %}
+                    <tr class="category-row" data-section="ricavi">
+                        <td>
+                            <div class="category-name">
+                                <span class="category-icon">{{ cat.icon }}</span>
+                                <span>{{ cat.name }}</span>
+                            </div>
+                        </td>
+                        {% for m in months %}
+                        <td class="{% if m.number == current_month %}current-month{% endif %} cell-positive">
+                            {{ "{:,.0f}".format(cat.monthly[m.number].expected) }}
+                        </td>
+                        {% endfor %}
+                        <td class="cell-highlight cell-positive">{{ "{:,.0f}".format(cat.yearly_total) }}</td>
+                    </tr>
+                    {% endfor %}
+                    <!-- Ricavi subtotal -->
+                    <tr class="totals-row" data-section="ricavi">
+                        <td><strong>Totale Ricavi</strong></td>
+                        {% for m in months %}
+                        <td class="{% if m.number == current_month %}current-month{% endif %} cell-positive">
+                            <strong>{{ "{:,.0f}".format(sections.ricavi.monthly_totals[m.number].expected) }}</strong>
+                        </td>
+                        {% endfor %}
+                        <td class="cell-highlight cell-positive">
+                            <strong>{{ "{:,.0f}".format(sections.ricavi.categories|sum(attribute='yearly_total')) }}</strong>
+                        </td>
+                    </tr>
+
+                    <!-- COSTI FISSI Section -->
+                    <tr class="section-header" data-section="costi_fissi" onclick="toggleSection('costi_fissi')">
+                        <td colspan="{{ months|length + 2 }}">
+                            <div class="section-name">
+                                <svg class="w-4 h-4 chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                                <span class="text-indigo-400">{{ sections.costi_fissi.icon }}</span>
+                                <span>COSTI FISSI</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% for cat in sections.costi_fissi.categories %}
+                    <tr class="category-row" data-section="costi_fissi">
+                        <td>
+                            <div class="category-name">
+                                <span class="category-icon">{{ cat.icon }}</span>
+                                <span>{{ cat.name }}</span>
+                            </div>
+                        </td>
+                        {% for m in months %}
+                        <td class="{% if m.number == current_month %}current-month{% endif %} cell-negative">
+                            {{ "{:,.0f}".format(cat.monthly[m.number].expected) }}
+                        </td>
+                        {% endfor %}
+                        <td class="cell-highlight cell-negative">{{ "{:,.0f}".format(cat.yearly_total) }}</td>
+                    </tr>
+                    {% endfor %}
+                    <!-- Costi Fissi subtotal -->
+                    <tr class="totals-row" data-section="costi_fissi">
+                        <td><strong>Totale Costi Fissi</strong></td>
+                        {% for m in months %}
+                        <td class="{% if m.number == current_month %}current-month{% endif %} cell-negative">
+                            <strong>{{ "{:,.0f}".format(sections.costi_fissi.monthly_totals[m.number].expected) }}</strong>
+                        </td>
+                        {% endfor %}
+                        <td class="cell-highlight cell-negative">
+                            <strong>{{ "{:,.0f}".format(sections.costi_fissi.categories|sum(attribute='yearly_total')) }}</strong>
+                        </td>
+                    </tr>
+
+                    <!-- COSTI VARIABILI Section -->
+                    <tr class="section-header" data-section="costi_variabili" onclick="toggleSection('costi_variabili')">
+                        <td colspan="{{ months|length + 2 }}">
+                            <div class="section-name">
+                                <svg class="w-4 h-4 chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                                <span class="text-amber-400">{{ sections.costi_variabili.icon }}</span>
+                                <span>COSTI VARIABILI</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% for cat in sections.costi_variabili.categories %}
+                    <tr class="category-row" data-section="costi_variabili">
+                        <td>
+                            <div class="category-name">
+                                <span class="category-icon">{{ cat.icon }}</span>
+                                <span>{{ cat.name }}</span>
+                            </div>
+                        </td>
+                        {% for m in months %}
+                        <td class="{% if m.number == current_month %}current-month{% endif %} cell-negative">
+                            {{ "{:,.0f}".format(cat.monthly[m.number].expected) }}
+                        </td>
+                        {% endfor %}
+                        <td class="cell-highlight cell-negative">{{ "{:,.0f}".format(cat.yearly_total) }}</td>
+                    </tr>
+                    {% endfor %}
+                    <!-- Costi Variabili subtotal -->
+                    <tr class="totals-row" data-section="costi_variabili">
+                        <td><strong>Totale Costi Variabili</strong></td>
+                        {% for m in months %}
+                        <td class="{% if m.number == current_month %}current-month{% endif %} cell-negative">
+                            <strong>{{ "{:,.0f}".format(sections.costi_variabili.monthly_totals[m.number].expected) }}</strong>
+                        </td>
+                        {% endfor %}
+                        <td class="cell-highlight cell-negative">
+                            <strong>{{ "{:,.0f}".format(sections.costi_variabili.categories|sum(attribute='yearly_total')) }}</strong>
+                        </td>
+                    </tr>
+
+                    <!-- TOTALI Section -->
+                    <tr class="section-header totals-section">
+                        <td colspan="{{ months|length + 2 }}">
+                            <div class="section-name">
+                                <span>&#128202;</span>
+                                <span>TOTALI</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% for row in sections.totali.rows %}
+                    <tr class="{% if loop.last %}saldo-row{% else %}totals-row{% endif %} totals-section">
+                        <td>
+                            <div class="category-name">
+                                <span>{{ row.icon }}</span>
+                                <span>{{ row.name }}</span>
+                            </div>
+                        </td>
+                        {% for m in months %}
+                        <td class="{% if m.number == current_month %}current-month{% endif %} {% if 'Ricavi' in row.name %}cell-positive{% elif 'Costi' in row.name %}cell-negative{% elif row.monthly[m.number].expected < 0 %}cell-negative{% else %}cell-positive{% endif %}">
+                            {% if row.monthly[m.number].expected is not none %}
+                            {{ "{:,.0f}".format(row.monthly[m.number].expected) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td class="cell-highlight">
+                            {% if 'Saldo' in row.name %}
+                            {{ "{:,.0f}".format(row.monthly[12].expected) }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Quick info -->
+    <div class="grid md:grid-cols-3 gap-4">
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground uppercase tracking-wider mb-1">Saldo Iniziale</p>
+            <p class="font-mono text-2xl font-bold">{{ "{:,.0f}".format(opening_balance) }} <span class="text-sm text-muted-foreground">&euro;</span></p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground uppercase tracking-wider mb-1">Ricavi Annui Previsti</p>
+            <p class="font-mono text-2xl font-bold text-emerald-400">{{ "{:,.0f}".format(sections.ricavi.categories|sum(attribute='yearly_total')) }} <span class="text-sm text-muted-foreground">&euro;</span></p>
+        </div>
+        <div class="card p-4">
+            <p class="text-xs text-muted-foreground uppercase tracking-wider mb-1">Costi Annui Previsti</p>
+            <p class="font-mono text-2xl font-bold text-red-400">{{ "{:,.0f}".format(sections.costi_fissi.categories|sum(attribute='yearly_total') + sections.costi_variabili.categories|sum(attribute='yearly_total')) }} <span class="text-sm text-muted-foreground">&euro;</span></p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="flex flex-wrap gap-3 justify-center pt-4">
+        <a href="/v2" class="btn-secondary px-5 py-2.5 text-sm flex items-center gap-2">
+            <span>&#128200;</span> Dashboard Pilastri
+        </a>
+        <a href="/setup?step=1" class="btn-primary px-5 py-2.5 text-sm flex items-center gap-2">
+            <span>&#9881;</span> Configura Budget
+        </a>
+    </div>
+</div>
+
+<script>
+    // Toggle section expand/collapse
+    function toggleSection(sectionName) {
+        const header = document.querySelector(`.section-header[data-section="${sectionName}"]`);
+        const rows = document.querySelectorAll(`.category-row[data-section="${sectionName}"], .totals-row[data-section="${sectionName}"]`);
+
+        header.classList.toggle('collapsed');
+
+        rows.forEach(row => {
+            row.classList.toggle('hidden');
+        });
+    }
+
+    // Highlight current month column on hover
+    document.querySelectorAll('.spreadsheet td, .spreadsheet th').forEach((cell, index) => {
+        cell.addEventListener('mouseenter', () => {
+            const colIndex = cell.cellIndex;
+            document.querySelectorAll(`.spreadsheet tr`).forEach(row => {
+                if (row.cells[colIndex]) {
+                    row.cells[colIndex].style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                }
+            });
+        });
+
+        cell.addEventListener('mouseleave', () => {
+            const colIndex = cell.cellIndex;
+            document.querySelectorAll(`.spreadsheet tr`).forEach(row => {
+                if (row.cells[colIndex]) {
+                    row.cells[colIndex].style.backgroundColor = '';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -585,6 +585,29 @@ async def health_check():
 
 # ============ V2 Routes ============
 
+@app.get("/v2/cashflow", response_class=HTMLResponse)
+async def cashflow_v2(request: Request, year: Optional[int] = None, db: Session = Depends(get_db)):
+    """V2 Cash Flow spreadsheet view (Sibill-style)."""
+    from app.services.forecast_v2 import MONTH_NAMES
+
+    today = date.today()
+    if not year:
+        year = today.year
+
+    # Fetch data from API endpoint
+    from app.routers.api_v2 import get_cashflow_spreadsheet
+    data = get_cashflow_spreadsheet(year, db)
+
+    return templates.TemplateResponse("cashflow_v2.html", {
+        "request": request,
+        "year": year,
+        "months": data["months"],
+        "sections": data["sections"],
+        "opening_balance": data["opening_balance"],
+        "current_month": today.month,
+    })
+
+
 @app.get("/v2", response_class=HTMLResponse)
 async def dashboard_v2(request: Request, db: Session = Depends(get_db)):
     """V2 Dashboard with 4 pillars and cash flow projection."""
