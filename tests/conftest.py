@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.database import Base
+from app.database import Base, Base_v2
 # Import models to register them with Base
 from app import models_v2  # noqa: F401
 
@@ -18,7 +18,9 @@ def db_engine():
         poolclass=StaticPool,
     )
     Base.metadata.create_all(bind=engine)
+    Base_v2.metadata.create_all(bind=engine)
     yield engine
+    Base_v2.metadata.drop_all(bind=engine)
     Base.metadata.drop_all(bind=engine)
 
 

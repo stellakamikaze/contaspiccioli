@@ -13,8 +13,9 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import init_db, get_db, SessionLocal
 from app.models import Category, Transaction, Pillar, TaxDeadline, UserProfile, MonthlyIncome
-from app.routers import api
+from app.routers import api, api_v2
 from app.services import budget
+from app.seed_v2 import seed_all as seed_v2_data
 from app.utils import format_currency, format_percentage, format_date, month_name
 
 logging.basicConfig(level=logging.INFO)
@@ -109,6 +110,7 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         seed_default_data(db)
+        seed_v2_data(db)
     finally:
         db.close()
 
@@ -135,8 +137,9 @@ templates.env.filters["currency"] = format_currency
 templates.env.filters["percentage"] = format_percentage
 templates.env.filters["date"] = format_date
 
-# Include API router
+# Include API routers
 app.include_router(api.router)
+app.include_router(api_v2.router)
 
 
 # ============ Helper Functions ============
@@ -578,5 +581,56 @@ async def about_page(request: Request):
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+
+
+# ============ V2 Routes ============
+
+@app.get("/v2", response_class=HTMLResponse)
+async def dashboard_v2(request: Request, db: Session = Depends(get_db)):
+    """V2 Dashboard with 4 pillars and cash flow projection."""
+    from app.services.pillars_v2 import get_pillar_summary
+    from app.services.forecast_v2 import project_balance
+    from app.models_v2 import TaxDeadline as TaxDeadlineV2, UserSettings
+
+    today = date.today()
+
+    # Get pillars summary
+    pillars_summary = get_pillar_summary(db)
+
+    # Get balance projection for next 6 months
+    projections = project_balance(db, months_ahead=6)
+
+    # Get upcoming tax deadlines (query directly)
+    deadlines_query = db.query(TaxDeadlineV2).filter(
+        TaxDeadlineV2.due_date >= today
+    ).order_by(TaxDeadlineV2.due_date).limit(3).all()
+
+    deadlines = []
+    for d in deadlines_query:
+        deadlines.append({
+            'name': d.name,
+            'due_date': d.due_date,
+            'amount_due': d.amount_due,
+            'amount_paid': d.amount_paid,
+            'remaining': d.remaining,
+            'days_remaining': (d.due_date - today).days,
+        })
+
+    # Get user settings
+    settings = db.query(UserSettings).first()
+    monthly_income = settings.monthly_income if settings else 3500
+
+    return templates.TemplateResponse("dashboard_v2.html", {
+        "request": request,
+        "pillars": pillars_summary['pillars'],
+        "total_balance": pillars_summary['total_balance'],
+        "total_target": pillars_summary['total_target'],
+        "overall_completion": pillars_summary['overall_completion'],
+        "projections": projections,
+        "deadlines": deadlines,
+        "monthly_income": monthly_income,
+        "month_name": month_name(today.month),
+        "year": today.year,
+    })
 
 
