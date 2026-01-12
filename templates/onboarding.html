@@ -419,7 +419,7 @@
                 <label class="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <span class="text-lg">📅</span> Tasse già pagate quest'anno
                 </label>
-                <p class="text-xs text-muted-foreground -mt-1 mb-2">Acconti, saldi o contributi INPS già versati nel {{ now().year }}</p>
+                <p class="text-xs text-muted-foreground -mt-1 mb-2">Acconti, saldi o contributi INPS già versati nel {{ current_year }}</p>
                 <div class="relative">
                     <input type="number" name="taxes_paid_ytd" step="100"
                            value="{{ profile.taxes_paid_ytd or 0 }}"

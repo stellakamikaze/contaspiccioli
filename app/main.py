@@ -164,7 +164,8 @@ async def setup_page(request: Request, step: int = 1, db: Session = Depends(get_
     return templates.TemplateResponse("onboarding.html", {
         "request": request,
         "step": min(max(step, 1), 5),
-        "profile": profile
+        "profile": profile,
+        "current_year": date.today().year,
     })
 
 
@@ -613,7 +614,7 @@ async def cashflow_v2(request: Request, year: Optional[int] = None, db: Session 
 async def dashboard_v2(request: Request, db: Session = Depends(get_db)):
     """V2 Dashboard with 4 pillars and cash flow projection."""
     from app.services.pillars_v2 import get_pillar_summary
-    from app.services.forecast_v2 import project_balance
+    from app.services.forecast_v2 import project_balance, get_forecast_comparison
     from app.models_v2 import TaxDeadline as TaxDeadlineV2, UserSettings
 
     today = date.today()
@@ -623,6 +624,45 @@ async def dashboard_v2(request: Request, db: Session = Depends(get_db)):
 
     # Get balance projection for next 6 months
     projections = project_balance(db, months_ahead=6)
+
+    # Get monthly comparison (current month budget vs actual)
+    comparison = get_forecast_comparison(db, today.year, today.month)
+    budget_comparison = None
+    if comparison:
+        # Build comparison data for template
+        all_costs = []
+        for c in (comparison.fixed_costs or []):
+            all_costs.append({
+                'name': c.category_name,
+                'icon': c.category_icon,
+                'expected': float(c.expected),
+                'actual': float(c.actual),
+                'variance': float(c.variance),
+                'is_over': c.is_over_budget,
+                'type': 'fixed',
+            })
+        for c in (comparison.variable_costs or []):
+            all_costs.append({
+                'name': c.category_name,
+                'icon': c.category_icon,
+                'expected': float(c.expected),
+                'actual': float(c.actual),
+                'variance': float(c.variance),
+                'is_over': c.is_over_budget,
+                'type': 'variable',
+            })
+        budget_comparison = {
+            'income': {
+                'expected': float(comparison.income.expected) if comparison.income else 0,
+                'actual': float(comparison.income.actual) if comparison.income else 0,
+                'variance': float(comparison.income.variance) if comparison.income else 0,
+            },
+            'costs': all_costs,
+            'total_expected': float(comparison.total_expected_costs),
+            'total_actual': float(comparison.total_actual_costs),
+            'expected_balance': float(comparison.expected_balance),
+            'actual_balance': float(comparison.actual_balance),
+        }
 
     # Get upcoming tax deadlines (query directly)
     deadlines_query = db.query(TaxDeadlineV2).filter(
@@ -655,6 +695,7 @@ async def dashboard_v2(request: Request, db: Session = Depends(get_db)):
         "monthly_income": monthly_income,
         "month_name": month_name(today.month),
         "year": today.year,
+        "comparison": budget_comparison,
     })
 
 

@@ -473,16 +473,31 @@ def compare_forecast_vs_actual(year: int, month: int, db: Session = Depends(get_
     if not comparison:
         raise HTTPException(status_code=404, detail=f"No forecast data for {month}/{year}")
 
+    # Map service response to API schema
+    planned_income = comparison.income.expected if comparison.income else Decimal("0")
+    actual_income = comparison.income.actual if comparison.income else Decimal("0")
+    variance_income = actual_income - planned_income
+    variance_expenses = comparison.total_actual_costs - comparison.total_expected_costs
+
+    # Determine status based on overall variance
+    total_variance = variance_income - variance_expenses  # positive = better than expected
+    if abs(total_variance) < 50:  # Within €50 tolerance
+        status = "on_track"
+    elif total_variance > 0:
+        status = "under_budget"
+    else:
+        status = "over_budget"
+
     return ForecastComparisonResponse(
         month=comparison.month,
         year=comparison.year,
-        planned_income=comparison.planned_income,
-        actual_income=comparison.actual_income,
-        planned_expenses=comparison.planned_expenses,
-        actual_expenses=comparison.actual_expenses,
-        variance_income=comparison.variance_income,
-        variance_expenses=comparison.variance_expenses,
-        status=comparison.status,
+        planned_income=planned_income,
+        actual_income=actual_income,
+        planned_expenses=comparison.total_expected_costs,
+        actual_expenses=comparison.total_actual_costs,
+        variance_income=variance_income,
+        variance_expenses=variance_expenses,
+        status=status,
     )
 
 

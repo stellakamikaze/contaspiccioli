@@ -293,8 +293,115 @@
         </div>
     </section>
 
-    <!-- Cash Flow Timeline (Horizontal) -->
+    <!-- Monthly Budget Comparison -->
+    {% if comparison %}
     <section class="animate-slide-up delay-3">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-muted-foreground uppercase tracking-wider">Confronto {{ month_name }}</h2>
+            <span class="text-xs text-muted-foreground">Previsto vs Effettivo</span>
+        </div>
+
+        <div class="card overflow-hidden">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-white/10 bg-white/[0.02]">
+                        <th class="text-left p-4 font-semibold text-muted-foreground">Categoria</th>
+                        <th class="text-right p-4 font-semibold text-muted-foreground">Previsto</th>
+                        <th class="text-right p-4 font-semibold text-muted-foreground">Effettivo</th>
+                        <th class="text-right p-4 font-semibold text-muted-foreground">Varianza</th>
+                        <th class="text-center p-4 w-12"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Income row -->
+                    <tr class="border-b border-white/5 bg-emerald-500/5">
+                        <td class="p-4">
+                            <div class="flex items-center gap-3">
+                                <span class="text-lg">&#128176;</span>
+                                <span class="font-medium">Entrate</span>
+                            </div>
+                        </td>
+                        <td class="text-right p-4 font-mono text-emerald-400">{{ "{:,.0f}".format(comparison.income.expected) }} &euro;</td>
+                        <td class="text-right p-4 font-mono">{{ "{:,.0f}".format(comparison.income.actual) }} &euro;</td>
+                        <td class="text-right p-4 font-mono {% if comparison.income.variance >= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                            {% if comparison.income.variance >= 0 %}+{% endif %}{{ "{:,.0f}".format(comparison.income.variance) }} &euro;
+                        </td>
+                        <td class="text-center p-4">
+                            {% if comparison.income.variance >= 0 %}
+                            <span class="text-emerald-400">&#10003;</span>
+                            {% else %}
+                            <span class="text-amber-400">&#9888;</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- Separator -->
+                    <tr>
+                        <td colspan="5" class="p-2 bg-white/[0.02]">
+                            <span class="text-xs text-muted-foreground uppercase tracking-wider px-2">Uscite</span>
+                        </td>
+                    </tr>
+
+                    <!-- Cost rows -->
+                    {% for cost in comparison.costs %}
+                    <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                        <td class="p-4">
+                            <div class="flex items-center gap-3">
+                                <span class="text-lg">{{ cost.icon }}</span>
+                                <span>{{ cost.name }}</span>
+                                {% if cost.type == 'fixed' %}
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground">fisso</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="text-right p-4 font-mono text-muted-foreground">{{ "{:,.0f}".format(cost.expected) }} &euro;</td>
+                        <td class="text-right p-4 font-mono">{{ "{:,.0f}".format(cost.actual) }} &euro;</td>
+                        <td class="text-right p-4 font-mono {% if cost.variance <= 0 %}text-emerald-400{% else %}text-red-400{% endif %}">
+                            {% if cost.variance > 0 %}+{% endif %}{{ "{:,.0f}".format(cost.variance) }} &euro;
+                        </td>
+                        <td class="text-center p-4">
+                            {% if cost.is_over %}
+                            <span class="text-red-400" title="Budget sforato">&#9888;</span>
+                            {% elif cost.actual > 0 %}
+                            <span class="text-emerald-400">&#10003;</span>
+                            {% else %}
+                            <span class="text-muted-foreground">&#8212;</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <!-- Totals -->
+                    <tr class="border-t-2 border-white/10 bg-white/[0.03] font-semibold">
+                        <td class="p-4">Totale Uscite</td>
+                        <td class="text-right p-4 font-mono text-red-400">{{ "{:,.0f}".format(comparison.total_expected) }} &euro;</td>
+                        <td class="text-right p-4 font-mono">{{ "{:,.0f}".format(comparison.total_actual) }} &euro;</td>
+                        <td class="text-right p-4 font-mono {% if comparison.total_actual <= comparison.total_expected %}text-emerald-400{% else %}text-red-400{% endif %}">
+                            {% set var = comparison.total_actual - comparison.total_expected %}
+                            {% if var > 0 %}+{% endif %}{{ "{:,.0f}".format(var) }} &euro;
+                        </td>
+                        <td></td>
+                    </tr>
+
+                    <!-- Balance -->
+                    <tr class="bg-accent/10 font-bold text-lg">
+                        <td class="p-4">Saldo Mese</td>
+                        <td class="text-right p-4 font-mono text-accent">{{ "{:,.0f}".format(comparison.expected_balance) }} &euro;</td>
+                        <td class="text-right p-4 font-mono">{{ "{:,.0f}".format(comparison.actual_balance) }} &euro;</td>
+                        <td class="text-right p-4 font-mono {% if comparison.actual_balance >= comparison.expected_balance %}text-emerald-400{% else %}text-red-400{% endif %}">
+                            {% set bal_var = comparison.actual_balance - comparison.expected_balance %}
+                            {% if bal_var > 0 %}+{% endif %}{{ "{:,.0f}".format(bal_var) }} &euro;
+                        </td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Cash Flow Timeline (Horizontal) -->
+    <section class="animate-slide-up delay-4">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-muted-foreground uppercase tracking-wider">Proiezione Cash Flow</h2>
             <span class="text-xs text-muted-foreground">Prossimi 6 mesi &rarr;</span>
