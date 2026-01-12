@@ -641,12 +641,17 @@ def get_coverage(db: Session = Depends(get_db)):
     coverage = get_tax_coverage(db)
     today = date.today()
 
+    # Get upcoming deadlines for response
+    deadlines = db.query(TaxDeadline).filter(
+        TaxDeadline.due_date >= today
+    ).order_by(TaxDeadline.due_date).all()
+
     return TaxCoverageResponse(
-        total_due=coverage.total_due,
-        total_reserved=coverage.total_reserved,
+        total_due=coverage.total_owed,
+        total_reserved=coverage.accrued,
         coverage_percentage=coverage.coverage_percentage,
         monthly_reserve_needed=coverage.monthly_reserve_needed,
-        is_covered=coverage.is_covered,
+        is_covered=coverage.shortfall == 0,
         deadlines=[
             TaxDeadlineResponse(
                 id=d.id,
@@ -661,7 +666,7 @@ def get_coverage(db: Session = Depends(get_db)):
                 days_remaining=(d.due_date - today).days,
                 pillar_id=d.pillar_id,
             )
-            for d in coverage.deadlines
+            for d in deadlines
         ],
     )
 
