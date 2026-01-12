@@ -240,7 +240,9 @@ class TestTaxesService:
         assert breakdown.total_tax < Decimal("15000.00")
 
     def test_generate_tax_deadlines_below_threshold(self, seeded_db):
+        from app.models_v2 import AdvanceMethod
         settings = seeded_db.query(TaxSettings).filter(TaxSettings.year == 2026).first()
+        settings.advance_method = AdvanceMethod.STORICO  # Use historic method
         settings.prior_year_tax_paid = Decimal("40.00")  # Below 52€
         settings.prior_year_inps_paid = Decimal("0.00")
         seeded_db.commit()
@@ -252,8 +254,10 @@ class TestTaxesService:
         assert len(deadlines) == 0
 
     def test_generate_tax_deadlines_split_payment(self, seeded_db):
+        from app.models_v2 import AdvanceMethod
         seed_pillars(seeded_db)
         settings = seeded_db.query(TaxSettings).filter(TaxSettings.year == 2026).first()
+        settings.advance_method = AdvanceMethod.STORICO  # Use historic method
         settings.prior_year_tax_paid = Decimal("5000.00")
         settings.prior_year_inps_paid = Decimal("8000.00")
         seeded_db.commit()

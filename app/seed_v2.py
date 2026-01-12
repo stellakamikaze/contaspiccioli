@@ -285,7 +285,7 @@ def seed_tax_settings(db: Session, year: int = 2026) -> TaxSettings:
         coefficient=Decimal("0.78"),
         inps_rate=Decimal("0.2607"),
         tax_rate=Decimal("0.15"),
-        advance_method=AdvanceMethod.STORICO,
+        advance_method=AdvanceMethod.PREVISIONALE,  # Use forecast-based method
         min_threshold=Decimal("52.00"),
         single_payment_threshold=Decimal("258.00"),
     )
@@ -313,7 +313,11 @@ def seed_user_settings(db: Session) -> UserSettings:
 
 def seed_all(db: Session) -> dict:
     """Esegue tutte le funzioni di seed."""
+    from datetime import date
     from app.services.pillars_v2 import update_pillar_targets
+    from app.services.taxes_v2 import generate_tax_deadlines
+    from app.services.forecast_v2 import generate_yearly_forecast
+    from app.models_v2 import TaxDeadline, ForecastMonth
 
     print("Seeding user settings...")
     user_settings = seed_user_settings(db)
@@ -344,6 +348,31 @@ def seed_all(db: Session) -> dict:
     tax_settings = seed_tax_settings(db)
     print(f"  Created tax settings for {tax_settings.year}")
 
+    # Generate tax deadlines if not exist
+    year = date.today().year
+    existing_deadlines = db.query(TaxDeadline).filter(TaxDeadline.year == year).count()
+    if existing_deadlines == 0:
+        print("Generating tax deadlines...")
+        annual_income = user_settings.monthly_income * 12
+        deadlines = generate_tax_deadlines(db, year, annual_income)
+        print(f"  Created {len(deadlines)} tax deadlines")
+    else:
+        print(f"  Tax deadlines already exist ({existing_deadlines})")
+        deadlines = []
+
+    # Generate yearly forecast if not exist
+    existing_forecasts = db.query(ForecastMonth).filter(ForecastMonth.year == year).count()
+    if existing_forecasts == 0:
+        print("Generating yearly forecast...")
+        opening_balance = p1.current_balance if p1 else Decimal("0.00")
+        forecasts = generate_yearly_forecast(
+            db, year, user_settings.monthly_income, opening_balance
+        )
+        print(f"  Created {len(forecasts)} forecast months")
+    else:
+        print(f"  Forecast already exists ({existing_forecasts} months)")
+        forecasts = []
+
     print("\nSeed complete!")
     return {
         "user_settings": user_settings,
@@ -351,6 +380,8 @@ def seed_all(db: Session) -> dict:
         "pillars": pillars,
         "categories": categories,
         "tax_settings": tax_settings,
+        "tax_deadlines": deadlines,
+        "forecasts": forecasts,
     }
 
 

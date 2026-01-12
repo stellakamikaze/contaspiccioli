@@ -149,17 +149,19 @@ def generate_yearly_forecast(
 
         # Add income lines
         for cat in income_categories:
-            amount = cat.monthly_budget if cat.monthly_budget else base_income
-            line = ForecastLine(
-                forecast_month_id=forecast.id,
-                category_id=cat.id,
-                line_type=LineType.INCOME,
-                description=cat.name,
-                expected_amount=amount,
-                is_recurring=True,
-            )
-            db.add(line)
-            total_income += amount
+            # Use category budget if defined (even if 0), else fall back to base_income
+            amount = cat.monthly_budget if cat.monthly_budget is not None else base_income
+            if amount > 0:
+                line = ForecastLine(
+                    forecast_month_id=forecast.id,
+                    category_id=cat.id,
+                    line_type=LineType.INCOME,
+                    description=cat.name,
+                    expected_amount=amount,
+                    is_recurring=True,
+                )
+                db.add(line)
+                total_income += amount
 
         # Add fixed cost lines
         for cat in fixed_categories:
