@@ -1,4 +1,4 @@
-"""Tax service v2 - P.IVA forfettaria tax calculations."""
+"""Tax service - P.IVA forfettaria tax calculations."""
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
-from app.models_v2 import TaxSettings, TaxDeadline, TaxRegime, AdvanceMethod, DeadlineType, Pillar
+from app.models import TaxSettings, TaxDeadline, TaxRegime, AdvanceMethod, DeadlineType, Pillar
 
 
 @dataclass

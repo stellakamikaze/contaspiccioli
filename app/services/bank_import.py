@@ -1,4 +1,4 @@
-"""Bank import service v2 - Parse CSV and auto-categorize transactions."""
+"""Bank import service - Parse CSV and auto-categorize transactions."""
 import csv
 import io
 import re
@@ -10,7 +10,7 @@ from enum import Enum
 
 from sqlalchemy.orm import Session
 
-from app.models_v2 import Transaction, Category, TransactionSource
+from app.models import Transaction, Category, TransactionSource
 
 
 class BankFormat(str, Enum):

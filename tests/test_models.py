@@ -3,7 +3,7 @@ import pytest
 from datetime import date, datetime
 from decimal import Decimal
 
-from app.models_v2 import (
+from app.models import (
     # Enums
     TaxRegime, AdvanceMethod, CategoryType, LineType,
     TransactionSource, DeadlineType, AccountType,

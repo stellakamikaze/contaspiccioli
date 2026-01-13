@@ -291,12 +291,12 @@
     <nav class="border-b border-white/[0.08] backdrop-blur-sm bg-background/80 sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
             <div class="flex items-center justify-between h-14 sm:h-16">
-                <a href="/v2/cashflow" class="font-display text-xl sm:text-2xl font-bold text-accent hover:text-accent/90 transition-colors">
+                <a href="/cashflow" class="font-display text-xl sm:text-2xl font-bold text-accent hover:text-accent/90 transition-colors">
                     Contaspiccioli
                 </a>
                 <div class="hidden md:flex items-center gap-6 lg:gap-8">
-                    <a href="/v2/cashflow" class="nav-link {% if '/cashflow' in request.url.path %}active{% endif %}">Cash Flow</a>
-                    <a href="/v2" class="nav-link {% if request.url.path == '/v2' %}active{% endif %}">Pilastri</a>
+                    <a href="/cashflow" class="nav-link {% if '/cashflow' in request.url.path %}active{% endif %}">Cash Flow</a>
+                    <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">Pilastri</a>
                     <a href="/summary" class="nav-link {% if '/summary' in request.url.path %}active{% endif %}">Prospetto</a>
                     <a href="/setup?step=1" class="nav-link {% if '/setup' in request.url.path %}active{% endif %}">Configura</a>
                 </div>
@@ -310,8 +310,8 @@
             <!-- Mobile menu -->
             <div id="mobile-menu" class="hidden md:hidden pb-4 border-t border-white/[0.08] mt-2">
                 <div class="flex flex-col gap-1 pt-3">
-                    <a href="/v2/cashflow" class="nav-link block py-3 px-2 rounded-lg hover:bg-white/5 {% if '/cashflow' in request.url.path %}active bg-accent/10{% endif %}">Cash Flow</a>
-                    <a href="/v2" class="nav-link block py-3 px-2 rounded-lg hover:bg-white/5 {% if request.url.path == '/v2' %}active bg-accent/10{% endif %}">Pilastri</a>
+                    <a href="/cashflow" class="nav-link block py-3 px-2 rounded-lg hover:bg-white/5 {% if '/cashflow' in request.url.path %}active bg-accent/10{% endif %}">Cash Flow</a>
+                    <a href="/" class="nav-link block py-3 px-2 rounded-lg hover:bg-white/5 {% if request.url.path == '/' %}active bg-accent/10{% endif %}">Pilastri</a>
                     <a href="/summary" class="nav-link block py-3 px-2 rounded-lg hover:bg-white/5 {% if '/summary' in request.url.path %}active bg-accent/10{% endif %}">Prospetto</a>
                     <a href="/setup?step=1" class="nav-link block py-3 px-2 rounded-lg hover:bg-white/5 {% if '/setup' in request.url.path %}active bg-accent/10{% endif %}">Configura</a>
                 </div>

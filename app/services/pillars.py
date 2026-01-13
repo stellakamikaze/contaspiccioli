@@ -1,4 +1,4 @@
-"""Pillar service v2 - Manage the 4 financial pillars (Coletti method)."""
+"""Pillar service - Manage the 4 financial pillars (Coletti method)."""
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
-from app.models_v2 import Pillar, PlannedExpense, TaxDeadline, UserSettings
+from app.models import Pillar, PlannedExpense, TaxDeadline, UserSettings
 
 
 @dataclass
@@ -335,8 +335,8 @@ def calculate_monthly_budget(
     3. Investimenti (% configurabile) → P4
     4. Spese quotidiane (resto) → P1 (fissi + variabili)
     """
-    from app.models_v2 import Category, CategoryType
-    from app.services.taxes_v2 import get_or_create_tax_settings, calculate_annual_taxes
+    from app.models import Category, CategoryType
+    from app.services.taxes import get_or_create_tax_settings, calculate_annual_taxes
 
     # Get user settings
     settings = db.query(UserSettings).first()

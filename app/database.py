@@ -12,7 +12,6 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
-Base_v2 = declarative_base()
 
 
 def get_db():
@@ -27,6 +26,4 @@ def get_db():
 def init_db():
     """Initialize database and create tables."""
     from app import models  # noqa: F401
-    from app import models_v2  # noqa: F401
     Base.metadata.create_all(bind=engine)
-    Base_v2.metadata.create_all(bind=engine)

@@ -1,9 +1,9 @@
-"""Tests for seed_v2 functions."""
+"""Tests for seed functions."""
 import pytest
 from decimal import Decimal
 
-from app.seed_v2 import seed_pillars, seed_accounts, seed_categories, seed_tax_settings, seed_all
-from app.models_v2 import Pillar, Account, Category, TaxSettings, CategoryType, TaxRegime, AccountType
+from app.seed import seed_pillars, seed_accounts, seed_categories, seed_tax_settings, seed_all
+from app.models import Pillar, Account, Category, TaxSettings, CategoryType, TaxRegime, AccountType
 
 
 class TestSeedPillars:

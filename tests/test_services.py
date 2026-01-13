@@ -3,31 +3,31 @@ import pytest
 from datetime import date
 from decimal import Decimal
 
-from app.models_v2 import (
+from app.models import (
     Pillar, Category, CategoryType, ForecastMonth, ForecastLine,
     Transaction, TaxSettings, TaxDeadline, TaxRegime, AdvanceMethod,
     DeadlineType, TransactionSource, LineType
 )
-from app.services.forecast_v2 import (
+from app.services.forecast import (
     get_month_name, get_or_create_forecast_month,
     generate_yearly_forecast, get_forecast_comparison,
     update_forecast_actuals, project_balance
 )
-from app.services.pillars_v2 import (
+from app.services.pillars import (
     get_pillar_status, calculate_target_balances,
     suggest_allocation, update_pillar_balance, record_transfer,
     get_pillar_summary
 )
-from app.services.taxes_v2 import (
+from app.services.taxes import (
     get_or_create_tax_settings, calculate_annual_taxes,
     generate_tax_deadlines, calculate_monthly_reserve,
     get_tax_coverage, record_tax_payment
 )
-from app.services.bank_import_v2 import (
+from app.services.bank_import import (
     parse_italian_date, parse_amount, categorize_transaction,
     parse_bank_statement, import_bank_statement, BankFormat
 )
-from app.seed_v2 import seed_pillars, seed_categories, seed_tax_settings
+from app.seed import seed_pillars, seed_categories, seed_tax_settings
 
 
 # ==================== FIXTURES ====================
@@ -240,7 +240,7 @@ class TestTaxesService:
         assert breakdown.total_tax < Decimal("15000.00")
 
     def test_generate_tax_deadlines_below_threshold(self, seeded_db):
-        from app.models_v2 import AdvanceMethod
+        from app.models import AdvanceMethod
         settings = seeded_db.query(TaxSettings).filter(TaxSettings.year == 2026).first()
         settings.advance_method = AdvanceMethod.STORICO  # Use historic method
         settings.prior_year_tax_paid = Decimal("40.00")  # Below 52€
@@ -254,7 +254,7 @@ class TestTaxesService:
         assert len(deadlines) == 0
 
     def test_generate_tax_deadlines_split_payment(self, seeded_db):
-        from app.models_v2 import AdvanceMethod
+        from app.models import AdvanceMethod
         seed_pillars(seeded_db)
         settings = seeded_db.query(TaxSettings).filter(TaxSettings.year == 2026).first()
         settings.advance_method = AdvanceMethod.STORICO  # Use historic method

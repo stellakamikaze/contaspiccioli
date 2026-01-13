@@ -6,18 +6,18 @@ from decimal import Decimal
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.models_v2 import (
+from app.models import (
     Pillar, Category, CategoryType, Transaction, TaxSettings,
     TaxDeadline, PlannedExpense, ForecastMonth, TransactionSource
 )
-from app.seed_v2 import seed_pillars, seed_categories, seed_tax_settings
+from app.seed import seed_pillars, seed_categories, seed_tax_settings
 
 
 @pytest.fixture
 def api_client(db_session):
     """Create test client with database session."""
     from fastapi import FastAPI
-    from app.routers.api_v2 import router
+    from app.routers.api import router
     from app.database import get_db
 
     app = FastAPI()
@@ -49,7 +49,7 @@ class TestPillarsAPI:
     """Test pillars API endpoints."""
 
     def test_list_pillars(self, seeded_client):
-        response = seeded_client.get("/api/v2/pillars")
+        response = seeded_client.get("/api/pillars")
         assert response.status_code == 200
         pillars = response.json()
         assert len(pillars) == 4
@@ -57,16 +57,16 @@ class TestPillarsAPI:
 
     def test_get_pillar(self, seeded_client, db_session):
         p1 = db_session.query(Pillar).filter(Pillar.number == 1).first()
-        response = seeded_client.get(f"/api/v2/pillars/{p1.id}")
+        response = seeded_client.get(f"/api/pillars/{p1.id}")
         assert response.status_code == 200
         assert response.json()["name"] == "liquidita"
 
     def test_get_pillar_not_found(self, seeded_client):
-        response = seeded_client.get("/api/v2/pillars/9999")
+        response = seeded_client.get("/api/pillars/9999")
         assert response.status_code == 404
 
     def test_get_pillars_status(self, seeded_client):
-        response = seeded_client.get("/api/v2/pillars/status")
+        response = seeded_client.get("/api/pillars/status")
         assert response.status_code == 200
         statuses = response.json()
         assert len(statuses) == 4
@@ -74,7 +74,7 @@ class TestPillarsAPI:
         assert "surplus" in statuses[0]
 
     def test_pillars_summary(self, seeded_client):
-        response = seeded_client.get("/api/v2/pillars/summary")
+        response = seeded_client.get("/api/pillars/summary")
         assert response.status_code == 200
         summary = response.json()
         assert "total_balance" in summary
@@ -84,7 +84,7 @@ class TestPillarsAPI:
     def test_update_pillar(self, seeded_client, db_session):
         p1 = db_session.query(Pillar).filter(Pillar.number == 1).first()
         response = seeded_client.put(
-            f"/api/v2/pillars/{p1.id}",
+            f"/api/pillars/{p1.id}",
             json={"current_balance": "5000.00"}
         )
         assert response.status_code == 200
@@ -93,7 +93,7 @@ class TestPillarsAPI:
     def test_reconcile_pillar_balance(self, seeded_client, db_session):
         p1 = db_session.query(Pillar).filter(Pillar.number == 1).first()
         response = seeded_client.put(
-            f"/api/v2/pillars/{p1.id}/balance",
+            f"/api/pillars/{p1.id}/balance",
             params={"new_balance": "8000.00"}
         )
         assert response.status_code == 200
@@ -107,7 +107,7 @@ class TestPillarsAPI:
         db_session.commit()
 
         response = seeded_client.post(
-            "/api/v2/pillars/transfer",
+            "/api/pillars/transfer",
             json={
                 "from_pillar_id": p1.id,
                 "to_pillar_id": p2.id,
@@ -124,7 +124,7 @@ class TestPillarsAPI:
         db_session.commit()
 
         response = seeded_client.post(
-            "/api/v2/pillars/transfer",
+            "/api/pillars/transfer",
             json={
                 "from_pillar_id": p1.id,
                 "to_pillar_id": p2.id,
@@ -140,7 +140,7 @@ class TestPillarsAPI:
         db_session.commit()
 
         response = seeded_client.get(
-            "/api/v2/pillars/allocation-suggestions",
+            "/api/pillars/allocation-suggestions",
             params={"surplus": "2000.00"}
         )
         assert response.status_code == 200
@@ -154,20 +154,20 @@ class TestCategoriesAPI:
     """Test categories API endpoints."""
 
     def test_list_categories(self, seeded_client):
-        response = seeded_client.get("/api/v2/categories")
+        response = seeded_client.get("/api/categories")
         assert response.status_code == 200
         categories = response.json()
         assert len(categories) > 0
 
     def test_list_categories_by_type(self, seeded_client):
-        response = seeded_client.get("/api/v2/categories", params={"type": "fixed"})
+        response = seeded_client.get("/api/categories", params={"type": "fixed"})
         assert response.status_code == 200
         categories = response.json()
         assert all(c["type"] == "fixed" for c in categories)
 
     def test_create_category(self, seeded_client):
         response = seeded_client.post(
-            "/api/v2/categories",
+            "/api/categories",
             json={
                 "name": "Test Category",
                 "type": "variable",
@@ -181,7 +181,7 @@ class TestCategoriesAPI:
     def test_update_category(self, seeded_client, db_session):
         cat = db_session.query(Category).first()
         response = seeded_client.put(
-            f"/api/v2/categories/{cat.id}",
+            f"/api/categories/{cat.id}",
             json={"monthly_budget": "500.00"}
         )
         assert response.status_code == 200
@@ -189,7 +189,7 @@ class TestCategoriesAPI:
 
     def test_delete_category(self, seeded_client, db_session):
         cat = db_session.query(Category).first()
-        response = seeded_client.delete(f"/api/v2/categories/{cat.id}")
+        response = seeded_client.delete(f"/api/categories/{cat.id}")
         assert response.status_code == 200
         assert response.json()["status"] == "deleted"
 
@@ -206,7 +206,7 @@ class TestTransactionsAPI:
     def test_create_transaction(self, seeded_client, db_session):
         cat = db_session.query(Category).first()
         response = seeded_client.post(
-            "/api/v2/transactions",
+            "/api/transactions",
             json={
                 "date": "2026-01-15",
                 "amount": "-45.50",
@@ -228,7 +228,7 @@ class TestTransactionsAPI:
         db_session.add(tx)
         db_session.commit()
 
-        response = seeded_client.get("/api/v2/transactions")
+        response = seeded_client.get("/api/transactions")
         assert response.status_code == 200
         assert len(response.json()) >= 1
 
@@ -243,7 +243,7 @@ class TestTransactionsAPI:
         db_session.commit()
 
         response = seeded_client.get(
-            "/api/v2/transactions",
+            "/api/transactions",
             params={"year": 2026, "month": 1}
         )
         assert response.status_code == 200
@@ -259,7 +259,7 @@ class TestTransactionsAPI:
         db_session.commit()
 
         response = seeded_client.put(
-            f"/api/v2/transactions/{tx.id}",
+            f"/api/transactions/{tx.id}",
             json={"description": "Updated"}
         )
         assert response.status_code == 200
@@ -276,7 +276,7 @@ class TestTransactionsAPI:
         db_session.commit()
         tx_id = tx.id
 
-        response = seeded_client.delete(f"/api/v2/transactions/{tx_id}")
+        response = seeded_client.delete(f"/api/transactions/{tx_id}")
         assert response.status_code == 200
 
 
@@ -287,7 +287,7 @@ class TestForecastAPI:
 
     def test_generate_forecast(self, seeded_client):
         response = seeded_client.post(
-            "/api/v2/forecast/generate",
+            "/api/forecast/generate",
             json={
                 "year": 2026,
                 "base_income": "3500.00",
@@ -301,7 +301,7 @@ class TestForecastAPI:
     def test_get_yearly_forecast(self, seeded_client):
         # Generate first
         seeded_client.post(
-            "/api/v2/forecast/generate",
+            "/api/forecast/generate",
             json={
                 "year": 2026,
                 "base_income": "3500.00",
@@ -309,14 +309,14 @@ class TestForecastAPI:
             }
         )
 
-        response = seeded_client.get("/api/v2/forecast/2026")
+        response = seeded_client.get("/api/forecast/2026")
         assert response.status_code == 200
         assert len(response.json()) == 12
 
     def test_get_month_forecast(self, seeded_client):
         # Generate first
         seeded_client.post(
-            "/api/v2/forecast/generate",
+            "/api/forecast/generate",
             json={
                 "year": 2026,
                 "base_income": "3500.00",
@@ -324,14 +324,14 @@ class TestForecastAPI:
             }
         )
 
-        response = seeded_client.get("/api/v2/forecast/2026/1")
+        response = seeded_client.get("/api/forecast/2026/1")
         assert response.status_code == 200
         assert response.json()["month"] == 1
 
     def test_get_balance_projection(self, seeded_client):
         # Generate forecast first
         seeded_client.post(
-            "/api/v2/forecast/generate",
+            "/api/forecast/generate",
             json={
                 "year": 2026,
                 "base_income": "3500.00",
@@ -340,7 +340,7 @@ class TestForecastAPI:
         )
 
         response = seeded_client.get(
-            "/api/v2/forecast/projection",
+            "/api/forecast/projection",
             params={"months": 6}
         )
         assert response.status_code == 200
@@ -353,7 +353,7 @@ class TestTaxesAPI:
     """Test taxes API endpoints."""
 
     def test_get_tax_settings(self, seeded_client):
-        response = seeded_client.get("/api/v2/taxes/settings/2026")
+        response = seeded_client.get("/api/taxes/settings/2026")
         assert response.status_code == 200
         settings = response.json()
         assert settings["year"] == 2026
@@ -361,7 +361,7 @@ class TestTaxesAPI:
 
     def test_update_tax_settings(self, seeded_client):
         response = seeded_client.put(
-            "/api/v2/taxes/settings/2026",
+            "/api/taxes/settings/2026",
             json={"tax_rate": "0.05"}
         )
         assert response.status_code == 200
@@ -369,7 +369,7 @@ class TestTaxesAPI:
 
     def test_calculate_taxes(self, seeded_client):
         response = seeded_client.get(
-            "/api/v2/taxes/calculate",
+            "/api/taxes/calculate",
             params={"gross_income": "42000.00", "year": 2026}
         )
         assert response.status_code == 200
@@ -385,7 +385,7 @@ class TestTaxesAPI:
         db_session.commit()
 
         response = seeded_client.post(
-            "/api/v2/taxes/deadlines/generate",
+            "/api/taxes/deadlines/generate",
             params={"year": 2026, "estimated_income": "42000.00"}
         )
         assert response.status_code == 200
@@ -393,7 +393,7 @@ class TestTaxesAPI:
         assert len(deadlines) >= 2
 
     def test_get_tax_deadlines(self, seeded_client, db_session):
-        from app.models_v2 import DeadlineType
+        from app.models import DeadlineType
         # Create a deadline
         deadline = TaxDeadline(
             year=2026,
@@ -405,11 +405,11 @@ class TestTaxesAPI:
         db_session.add(deadline)
         db_session.commit()
 
-        response = seeded_client.get("/api/v2/taxes/deadlines/2026")
+        response = seeded_client.get("/api/taxes/deadlines/2026")
         assert response.status_code == 200
 
     def test_pay_tax_deadline(self, seeded_client, db_session):
-        from app.models_v2 import DeadlineType
+        from app.models import DeadlineType
         deadline = TaxDeadline(
             year=2026,
             deadline_type=DeadlineType.SALDO,
@@ -421,7 +421,7 @@ class TestTaxesAPI:
         db_session.commit()
 
         response = seeded_client.put(
-            f"/api/v2/taxes/deadlines/{deadline.id}/pay",
+            f"/api/taxes/deadlines/{deadline.id}/pay",
             json={"amount": "1000.00"}
         )
         assert response.status_code == 200
@@ -439,7 +439,7 @@ class TestBankImportAPI:
 18/01/2026;BONIFICO DA UFFICIO FURORE SRL;3500,00
 """
         response = seeded_client.post(
-            "/api/v2/bank/import",
+            "/api/bank/import",
             json={
                 "content": csv_content,
                 "year": 2026,
@@ -462,7 +462,7 @@ class TestBankImportAPI:
         db_session.add(tx)
         db_session.commit()
 
-        response = seeded_client.get("/api/v2/bank/uncategorized")
+        response = seeded_client.get("/api/bank/uncategorized")
         assert response.status_code == 200
         assert response.json()["count"] >= 1
 
@@ -474,7 +474,7 @@ class TestPlannedExpensesAPI:
 
     def test_create_planned_expense(self, seeded_client):
         response = seeded_client.post(
-            "/api/v2/expenses/planned",
+            "/api/expenses/planned",
             json={
                 "name": "Vacanza estiva",
                 "target_date": "2026-08-01",
@@ -493,7 +493,7 @@ class TestPlannedExpensesAPI:
         db_session.add(expense)
         db_session.commit()
 
-        response = seeded_client.get("/api/v2/expenses/planned")
+        response = seeded_client.get("/api/expenses/planned")
         assert response.status_code == 200
         assert len(response.json()) >= 1
 
@@ -507,7 +507,7 @@ class TestPlannedExpensesAPI:
         db_session.commit()
 
         response = seeded_client.put(
-            f"/api/v2/expenses/planned/{expense.id}",
+            f"/api/expenses/planned/{expense.id}",
             json={"current_amount": "500.00"}
         )
         assert response.status_code == 200
@@ -523,7 +523,7 @@ class TestPlannedExpensesAPI:
         db_session.commit()
         exp_id = expense.id
 
-        response = seeded_client.delete(f"/api/v2/expenses/planned/{exp_id}")
+        response = seeded_client.delete(f"/api/expenses/planned/{exp_id}")
         assert response.status_code == 200
 
 
@@ -533,12 +533,12 @@ class TestUserSettingsAPI:
     """Test user settings API endpoints."""
 
     def test_get_settings(self, seeded_client):
-        response = seeded_client.get("/api/v2/settings")
+        response = seeded_client.get("/api/settings")
         assert response.status_code == 200
 
     def test_update_settings(self, seeded_client):
         response = seeded_client.put(
-            "/api/v2/settings",
+            "/api/settings",
             json={
                 "monthly_income": "4000.00",
                 "average_monthly_expenses": "3000.00"

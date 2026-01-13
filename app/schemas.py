@@ -1,10 +1,10 @@
-"""Pydantic schemas for Contaspiccioli v2.0 API."""
+"""Pydantic schemas for Contaspiccioli API."""
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict
 
-from app.models_v2 import (
+from app.models import (
     CategoryType, LineType, TransactionSource, TaxRegime,
     AdvanceMethod, DeadlineType, AccountType
 )

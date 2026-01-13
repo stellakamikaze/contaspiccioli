@@ -783,6 +783,109 @@ git checkout -b refactor/v2-pillar-cashflow
 
 ---
 
+## Stato Implementazione (Aggiornato 2026-01-13)
+
+### Phase Status
+
+| Phase | Stato | Note |
+|-------|-------|------|
+| Phase 0: Preparazione | **COMPLETATA** | Branch creato, tag v1.0-legacy |
+| Phase 1: Database | **COMPLETATA** | Schema v2 in `models_v2.py` |
+| Phase 2: Services | **COMPLETATA** | 4 servizi: forecast, pillars, taxes, bank_import |
+| Phase 3: API | **COMPLETATA** | 1076 righe in `api_v2.py`, 38 endpoint |
+| Phase 4: Frontend | **COMPLETATA** | Dashboard v2, Cashflow spreadsheet |
+| Phase 5: AI Categorization | **POST-MVP** | Keywords base implementate, learning da fare |
+| Phase 6: Features Avanzate | **POST-MVP** | Telegram, Export, Multi-anno |
+
+### Test Coverage
+
+- **116 test passano** (4 file test v2)
+- Copertura: models, services, API, seed
+
+### Sistema Dual v1/v2
+
+**ATTENZIONE**: Coesistono due sistemi paralleli.
+
+| Route | Sistema | File |
+|-------|---------|------|
+| `/`, `/summary`, `/pillars` | v1 (legacy) | models.py, budget.py |
+| `/v2`, `/v2/cashflow` | v2 (nuovo) | models_v2.py, *_v2.py |
+
+**Decisione richiesta**: Sunset v1 o coesistenza permanente?
+
+---
+
+## Code Review Completa (2026-01-13)
+
+### Bug Identificati
+
+#### Critical (da fixare subito)
+
+| # | Bug | File | Fix Proposto |
+|---|-----|------|--------------|
+| 1 | **Calcolo IRPEF errato** | budget.py:136-141 | `irpef = (taxable_income - inps) * tax_rate` |
+| 2 | **Catch vuoti** (errori silenziati) | bank_parser.py:53,166,199 | Loggare eccezioni |
+| 3 | **Return None non gestito** | api_v2.py:384-386 | Validare category_id esiste |
+
+#### Warning (da pianificare)
+
+| # | Bug | File |
+|---|-----|------|
+| 4 | IndexError su CSV vuoto | bank_import_v2.py:154 |
+| 5 | Calcolo 3 mesi fragile | pillars_v2.py:196-200 |
+| 6 | `_months_elapsed()` ignora anno | budget.py:93-96 |
+| 7 | Race condition import | bank_import_v2.py:361-376 |
+| 8 | KeyError potenziale | api_v2.py:972 |
+
+### Performance Issues
+
+| Priorita | Issue | Impatto | Fix |
+|----------|-------|---------|-----|
+| **CRITICO** | Query N+1 cashflow | ~240 query/request | Bulk query ForecastLine |
+| ALTO | Calcoli senza cache | CPU waste | TTL cache 5 min |
+| ALTO | Query ridondanti dashboard | Multiple scans | Consolidare in service |
+| MEDIO | Mancano indici compositi | Slow lookups | Migration DB |
+
+### Architecture Issues
+
+| Priorita | Issue | Descrizione |
+|----------|-------|-------------|
+| **P0** | Sistema dual v1/v2 | Rimuovere v1 o documentare freeze |
+| **P1** | God object main.py | Estrarre route in routers/pages.py |
+| **P1** | Valori hardcoded | Centralizzare 3500.00 in config.py |
+| **P2** | Logica in API | Estrarre 230 righe cashflow in service |
+
+---
+
+## Prossimi Passi (Post-Review)
+
+### Immediato (P0)
+
+1. [ ] **Fix Query N+1** - Precarica ForecastLine con bulk query
+2. [ ] **Decisione v1** - Freeze, migrate, o remove?
+3. [ ] **Fix Critical Bug #1** - Calcolo IRPEF (se v1 resta attivo)
+
+### Short-term (P1)
+
+4. [ ] **Refactor main.py** - Estrai HTML routes
+5. [ ] **Centralizza default** - `DEFAULT_MONTHLY_INCOME` in config
+6. [ ] **Indici DB** - `ix_forecast_line_month_cat`
+
+### Medium-term (P2)
+
+7. [ ] **Service cashflow** - Estrai da api_v2.py
+8. [ ] **Caching** - calculate_monthly_budget con TTL
+9. [ ] **Fix warning bugs** - Race condition, CSV vuoto
+
+### Post-MVP
+
+10. [ ] Phase 5: Learning keywords da categorizzazione manuale
+11. [ ] Phase 6.1: Notifiche Telegram scadenze
+12. [ ] Phase 6.2: Export CSV/PDF
+13. [ ] Phase 6.3: Confronto anno su anno
+
+---
+
 ## Changelog Piano
 
 | Data | Modifica |
@@ -794,3 +897,6 @@ git checkout -b refactor/v2-pillar-cashflow
 | 2026-01-11 | **REVIEW**: Semplificato `Account`: BBVA=P1, Fineco=P2+P3+P4, Fideuram=solo F24 |
 | 2026-01-11 | **REVIEW**: Aggiunta sezione "Errori Noti e Mitigazioni" |
 | 2026-01-11 | **VALIDATE**: Confermate assunzioni con utente |
+| 2026-01-13 | **COMPLETATO**: Phase 0-4 (refactoring v2) |
+| 2026-01-13 | **CODE REVIEW**: Bug hunting (10 bug), Architecture, Performance, Completeness |
+| 2026-01-13 | **AGGIUNTO**: Sezione "Stato Implementazione" e "Code Review Completa" |

@@ -1,10 +1,10 @@
-"""Seed data for Contaspiccioli v2.0 - Default pillars and categories."""
+"""Seed data for Contaspiccioli - Default pillars and categories."""
 from decimal import Decimal
 from typing import TypeVar
 
 from sqlalchemy.orm import Session
 
-from app.models_v2 import (
+from app.models import (
     Pillar, Category, CategoryType, TaxSettings, TaxRegime, AdvanceMethod,
     Account, AccountType, UserSettings
 )
@@ -314,10 +314,10 @@ def seed_user_settings(db: Session) -> UserSettings:
 def seed_all(db: Session) -> dict:
     """Esegue tutte le funzioni di seed."""
     from datetime import date
-    from app.services.pillars_v2 import update_pillar_targets
-    from app.services.taxes_v2 import generate_tax_deadlines
-    from app.services.forecast_v2 import generate_yearly_forecast
-    from app.models_v2 import TaxDeadline, ForecastMonth
+    from app.services.pillars import update_pillar_targets
+    from app.services.taxes import generate_tax_deadlines
+    from app.services.forecast import generate_yearly_forecast
+    from app.models import TaxDeadline, ForecastMonth
 
     print("Seeding user settings...")
     user_settings = seed_user_settings(db)
